@@ -4,10 +4,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/waryataw/chat-server/internal/config"
-	"google.golang.org/grpc/credentials/insecure"
 	"log"
 	"net"
+
+	"github.com/waryataw/chat-server/internal/config"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -28,13 +29,11 @@ func init() {
 type server struct {
 	desc.UnimplementedChatV1Server
 	pool       *pgxpool.Pool
-	clientConn *grpc.ClientConn
+	grpcClient descUser.UserV1Client
 }
 
 func (s *server) Create(ctx context.Context, _ *desc.CreateRequest) (*desc.CreateResponse, error) {
-	client := descUser.NewUserV1Client(s.clientConn)
-
-	user, err := client.GetByName(ctx, &descUser.GetByNameRequest{
+	user, err := s.grpcClient.GetByName(ctx, &descUser.GetByNameRequest{
 		Name: "magna",
 	})
 	if err != nil {
@@ -79,7 +78,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to connect to Auth server: %v", err)
 	}
-	defer conn.Close()
+	defer func(conn *grpc.ClientConn) {
+		err := conn.Close()
+		if err != nil {
+			log.Fatalf("failed to close grpc connection: %v", err)
+		}
+	}(conn)
 
 	pgConfig, err := config.NewPGConfig()
 	if err != nil {
@@ -100,7 +104,10 @@ func main() {
 
 	s := grpc.NewServer()
 	reflection.Register(s)
-	desc.RegisterChatV1Server(s, &server{pool: pool, clientConn: conn})
+
+	client := descUser.NewUserV1Client(conn)
+
+	desc.RegisterChatV1Server(s, &server{pool: pool, grpcClient: client})
 
 	log.Printf("server listening at %v", lis.Addr())
 
