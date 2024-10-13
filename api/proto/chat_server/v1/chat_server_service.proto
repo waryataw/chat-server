@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package chat_server_v1;
+
+import "chat_server_messages.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/waryataw/chat_server/pkg/chat_server_v1";
+
+service ChatServerService {
+  rpc CreateChat(CreateChatRequest) returns (CreateChatResponse);
+  rpc DeleteChat(DeleteChatRequest) returns (google.protobuf.Empty);
+  rpc SendMessage(SendMessageRequest) returns (google.protobuf.Empty);
+}

@@ -17,8 +17,8 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 
-	descUser "github.com/waryataw/auth/pkg/user_v1"
-	desc "github.com/waryataw/chat-server/pkg/chat_v1"
+	descUser "github.com/waryataw/auth/pkg/auth_v1"
+	desc "github.com/waryataw/chat-server/pkg/chat_server_v1"
 )
 
 const errNoRows = "no rows in result set"
@@ -30,41 +30,43 @@ func init() {
 }
 
 type server struct {
-	desc.UnimplementedChatV1Server
+	desc.UnimplementedChatServerServiceServer
 	pool       *pgxpool.Pool
-	grpcClient descUser.UserV1Client
+	grpcClient descUser.AuthServiceClient
 }
 
-func (s *server) Create(ctx context.Context, req *desc.CreateRequest) (*desc.CreateResponse, error) {
+func (s *server) CreateChat(ctx context.Context, req *desc.CreateChatRequest) (*desc.CreateChatResponse, error) {
 
 	var userIDs []int64
 
 	for _, username := range req.GetUsernames() {
 
-		user, err := s.grpcClient.GetByName(ctx, &descUser.GetByNameRequest{
-			Name: username,
+		user, err := s.grpcClient.GetUser(ctx, &descUser.GetUserRequest{
+			Query: &descUser.GetUserRequest_Name{
+				Name: username,
+			},
 		})
 		if err != nil {
 			return nil, err
 		}
 
-		userIDs = append(userIDs, user.GetUser().GetId())
+		userIDs = append(userIDs, user.GetId())
 
 	}
 
-	builderInsert := sq.Insert("chat").
+	query := sq.Insert("chat").
 		PlaceholderFormat(sq.Dollar).
 		Columns("created_at").
 		Values(sq.Expr("NOW()")).
 		Suffix("RETURNING id")
 
-	query, args, err := builderInsert.ToSql()
+	sql, args, err := query.ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build query to insert chat: %v", err)
 	}
 
 	var chatID int64
-	err = s.pool.QueryRow(ctx, query, args...).Scan(&chatID)
+	err = s.pool.QueryRow(ctx, sql, args...).Scan(&chatID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert chat: %v", err)
 	}
@@ -73,42 +75,42 @@ func (s *server) Create(ctx context.Context, req *desc.CreateRequest) (*desc.Cre
 
 	for _, id := range userIDs {
 
-		builderInsertChatUser := sq.Insert("chat_user").
+		query := sq.Insert("chat_user").
 			PlaceholderFormat(sq.Dollar).
 			Columns("chat_id", "user_id").
 			Values(chatID, id)
 
-		query, args, err = builderInsertChatUser.ToSql()
+		sql, args, err = query.ToSql()
 		if err != nil {
 			return nil, fmt.Errorf("failed to build query to insert chat_user: %v", err)
 		}
 
-		_, err = s.pool.Exec(ctx, query, args...)
+		_, err = s.pool.Exec(ctx, sql, args...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to insert chat_user: %v", err)
 		}
 
 	}
 
-	return &desc.CreateResponse{Id: chatID}, nil
+	return &desc.CreateChatResponse{Id: chatID}, nil
 }
 
-func (s *server) Delete(ctx context.Context, req *desc.DeleteRequest) (*emptypb.Empty, error) {
+func (s *server) DeleteChat(ctx context.Context, req *desc.DeleteChatRequest) (*emptypb.Empty, error) {
 
-	bqs := sq.Select("1").
+	query := sq.Select("1").
 		From("chat").
 		PlaceholderFormat(sq.Dollar).
 		Where(sq.Eq{"id": req.GetId()}).
 		Limit(1)
 
-	query, args, err := bqs.ToSql()
+	sql, args, err := query.ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build query: %v", err)
 	}
 
 	var exist int
 
-	err = s.pool.QueryRow(ctx, query, args...).Scan(&exist)
+	err = s.pool.QueryRow(ctx, sql, args...).Scan(&exist)
 	if err != nil {
 		if err.Error() == errNoRows {
 			return nil, fmt.Errorf("chat: %d not founded", req.GetId())
@@ -116,10 +118,10 @@ func (s *server) Delete(ctx context.Context, req *desc.DeleteRequest) (*emptypb.
 		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}
 
-	bqd := sq.Delete("chat").PlaceholderFormat(sq.Dollar).Where(sq.Eq{"id": req.GetId()})
+	queryDelete := sq.Delete("chat").PlaceholderFormat(sq.Dollar).Where(sq.Eq{"id": req.GetId()})
 
-	query, args, err = bqd.ToSql()
-	_, err = s.pool.Exec(ctx, query, args...)
+	sql, args, err = queryDelete.ToSql()
+	_, err = s.pool.Exec(ctx, sql, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}
@@ -129,46 +131,45 @@ func (s *server) Delete(ctx context.Context, req *desc.DeleteRequest) (*emptypb.
 
 func (s *server) SendMessage(ctx context.Context, req *desc.SendMessageRequest) (*emptypb.Empty, error) {
 
-	user, err := s.grpcClient.GetByName(ctx, &descUser.GetByNameRequest{
-		Name: req.GetFrom(),
+	user, err := s.grpcClient.GetUser(ctx, &descUser.GetUserRequest{
+		Query: &descUser.GetUserRequest_Name{Name: req.GetFrom()},
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	// Пока выберу первый попавщийся, потом будет совсем иначе все
-	bQSelectChat := sq.Select("chat_id").
+	querySelect := sq.Select("chat_id").
 		From("chat_user").
 		PlaceholderFormat(sq.Dollar).
-		Where(sq.Eq{"user_id": user.GetUser().GetId()}).
+		Where(sq.Eq{"user_id": user.GetId()}).
 		Limit(1)
 
-	query, args, err := bQSelectChat.ToSql()
+	sql, args, err := querySelect.ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build query: %v", err)
 	}
 	var chatID int64
 
-	// Выполняем запрос и сканируем результат
-	err = s.pool.QueryRow(ctx, query, args...).Scan(&chatID)
+	err = s.pool.QueryRow(ctx, sql, args...).Scan(&chatID)
 	if err != nil {
 		if err.Error() == errNoRows {
-			return nil, fmt.Errorf("no chat found for user: %v", user.GetUser().GetId())
+			return nil, fmt.Errorf("no chat found for user: %v", user.GetId())
 		}
 		return nil, fmt.Errorf("failed to select chat id: %v", err)
 	}
 
-	bQInsertMessage := sq.Insert("message").
+	queryInsert := sq.Insert("message").
 		PlaceholderFormat(sq.Dollar).
 		Columns("chat_id", "user_id", "text").
-		Values(chatID, user.User.GetId(), req.GetText())
+		Values(chatID, user.GetId(), req.GetText())
 
-	query, args, err = bQInsertMessage.ToSql()
+	sql, args, err = queryInsert.ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build query to insert message: %v", err)
 	}
 
-	_, err = s.pool.Exec(ctx, query, args...)
+	_, err = s.pool.Exec(ctx, sql, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert message: %v", err)
 	}
@@ -181,7 +182,6 @@ func main() {
 	flag.Parse()
 	ctx := context.Background()
 
-	// Считываем переменные окружения
 	err := config.Load(configPath)
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
@@ -228,9 +228,9 @@ func main() {
 	s := grpc.NewServer()
 	reflection.Register(s)
 
-	client := descUser.NewUserV1Client(conn)
+	client := descUser.NewAuthServiceClient(conn)
 
-	desc.RegisterChatV1Server(s, &server{pool: pool, grpcClient: client})
+	desc.RegisterChatServerServiceServer(s, &server{pool: pool, grpcClient: client})
 
 	log.Printf("server listening at %v", lis.Addr())
 
