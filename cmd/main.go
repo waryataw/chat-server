@@ -4,6 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/jackc/pgx/v5"
+	"github.com/pkg/errors"
 	"log"
 	"net"
 
@@ -32,23 +34,25 @@ func init() {
 type server struct {
 	chatserverv1.UnimplementedChatServerServiceServer
 	pool       *pgxpool.Pool
-	grpcClient authv1.AuthServiceClient
+	authClient authv1.AuthServiceClient
 }
 
 // CreateChat Создание чата
 func (s *server) CreateChat(ctx context.Context, req *chatserverv1.CreateChatRequest) (*chatserverv1.CreateChatResponse, error) {
-	var userIDs []int64
-	for _, username := range req.GetUsernames() {
-		user, err := s.grpcClient.GetUser(ctx, &authv1.GetUserRequest{
+	usernames := req.GetUsernames()
+	userIDs := make([]int64, len(usernames))
+
+	for index, username := range usernames {
+		user, err := s.authClient.GetUser(ctx, &authv1.GetUserRequest{
 			Query: &authv1.GetUserRequest_Name{
 				Name: username,
 			},
 		})
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed get user from auth service: %w", err)
 		}
 
-		userIDs = append(userIDs, user.GetId())
+		userIDs[index] = user.GetId()
 	}
 
 	query := sq.Insert("chat").
@@ -102,6 +106,7 @@ func (s *server) DeleteChat(ctx context.Context, req *chatserverv1.DeleteChatReq
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
+
 	if tag.RowsAffected() == 0 {
 		return nil, fmt.Errorf("failed to delete chat: %d not found", req.GetId())
 	}
@@ -111,7 +116,7 @@ func (s *server) DeleteChat(ctx context.Context, req *chatserverv1.DeleteChatReq
 
 // SendMessage Отправка сообщения
 func (s *server) SendMessage(ctx context.Context, req *chatserverv1.SendMessageRequest) (*emptypb.Empty, error) {
-	user, err := s.grpcClient.GetUser(ctx, &authv1.GetUserRequest{
+	user, err := s.authClient.GetUser(ctx, &authv1.GetUserRequest{
 		Query: &authv1.GetUserRequest_Name{Name: req.GetFrom()},
 	})
 	if err != nil {
@@ -131,7 +136,7 @@ func (s *server) SendMessage(ctx context.Context, req *chatserverv1.SendMessageR
 
 	var chatID int64
 	if err := s.pool.QueryRow(ctx, sql, args...).Scan(&chatID); err != nil {
-		if err.Error() == errNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, fmt.Errorf("no chat found for user: %d", user.GetId())
 		}
 		return nil, fmt.Errorf("failed to select chat: %w", err)
@@ -212,7 +217,7 @@ func main() {
 
 	client := authv1.NewAuthServiceClient(conn)
 
-	chatserverv1.RegisterChatServerServiceServer(s, &server{pool: pool, grpcClient: client})
+	chatserverv1.RegisterChatServerServiceServer(s, &server{pool: pool, authClient: client})
 
 	log.Printf("server listening at %v", lis.Addr())
 

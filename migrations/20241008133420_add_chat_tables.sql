@@ -2,35 +2,33 @@
 -- +goose StatementBegin
 CREATE TABLE chat
 (
-    id         SERIAL PRIMARY KEY,
+    id         BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE chat_user
 (
-    id      SERIAL PRIMARY KEY,
-    chat_id INT REFERENCES chat (id) ON DELETE CASCADE NOT NULL,
-    user_id INT                                        NOT NULL,
-    CONSTRAINT uq_chat_user UNIQUE (chat_id, user_id)
+    id      BIGSERIAL PRIMARY KEY,
+    chat_id BIGINT REFERENCES chat (id) ON DELETE CASCADE NOT NULL,
+    user_id BIGINT                                        NOT NULL,
+    UNIQUE (chat_id, user_id)
 );
 
 CREATE TABLE message
 (
-    id         SERIAL PRIMARY KEY,
-    chat_id    INT REFERENCES chat (id) ON DELETE CASCADE NOT NULL,
-    user_id    INT                                        NOT NULL,
-    text       TEXT,
-    created_at TIMESTAMP                                  NOT NULL DEFAULT NOW()
+    id         BIGSERIAL PRIMARY KEY,
+    chat_id    BIGINT REFERENCES chat (id) ON DELETE CASCADE NOT NULL,
+    user_id    BIGINT                                        NOT NULL,
+    text       VARCHAR(10000),
+    created_at TIMESTAMP                                     NOT NULL DEFAULT NOW()
 );
 
 -- Индексы
-CREATE INDEX idx_chat_user_chat_id_user_id ON chat_user (chat_id, user_id);
 CREATE INDEX idx_message_chat_id ON message (chat_id);
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
-DROP INDEX IF EXISTS idx_chat_user_chat_id_user_id;
 DROP INDEX IF EXISTS idx_message_chat_id;
 
 DROP TABLE IF EXISTS message;
