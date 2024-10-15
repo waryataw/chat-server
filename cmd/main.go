@@ -54,6 +54,19 @@ func (s *server) CreateChat(ctx context.Context, req *chatserverv1.CreateChatReq
 		userIDs[index] = user.GetId()
 	}
 
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			if err := tx.Rollback(ctx); err != nil {
+				log.Fatalf("failed to rollback transaction: %v", err)
+			}
+		}
+	}()
+
 	query := sq.Insert("chat").
 		Columns("created_at").
 		Values(sq.Expr("NOW()")).
@@ -65,7 +78,7 @@ func (s *server) CreateChat(ctx context.Context, req *chatserverv1.CreateChatReq
 	}
 
 	var chatID int64
-	if err := s.pool.QueryRow(ctx, sql, args...).Scan(&chatID); err != nil {
+	if err := tx.QueryRow(ctx, sql, args...).Scan(&chatID); err != nil {
 		return nil, fmt.Errorf("failed to insert chat: %w", err)
 	}
 
@@ -84,9 +97,13 @@ func (s *server) CreateChat(ctx context.Context, req *chatserverv1.CreateChatReq
 			return nil, fmt.Errorf("failed to build query to insert chat_user: %w", err)
 		}
 
-		if _, err := s.pool.Exec(ctx, sql, args...); err != nil {
+		if _, err := tx.Exec(ctx, sql, args...); err != nil {
 			return nil, fmt.Errorf("failed to insert chat_user: %w", err)
 		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return &chatserverv1.CreateChatResponse{Id: chatID}, nil
