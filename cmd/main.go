@@ -4,10 +4,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/jackc/pgx/v5"
-	"github.com/pkg/errors"
 	"log"
 	"net"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/pkg/errors"
 
 	"github.com/waryataw/chat-server/internal/config"
 	"google.golang.org/grpc/credentials/insecure"
@@ -22,8 +23,6 @@ import (
 	authv1 "github.com/waryataw/auth/pkg/authv1"
 	chatserverv1 "github.com/waryataw/chat-server/pkg/chatserverv1"
 )
-
-const errNoRows = "no rows in result set"
 
 var configPath string
 
