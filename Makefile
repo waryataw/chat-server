@@ -22,16 +22,16 @@ get-deps:
 
 
 generate:
-	make generate-note-api
+	make generate-chat_server-api
 
-generate-note-api:
-	mkdir -p pkg/chat_server_v1
+generate-chat_server-api:
+	mkdir -p pkg/chatserverv1
 	protoc --proto_path api/proto/chat_server/v1 \
-	--go_out=pkg/chat_server_v1 --go_opt=paths=source_relative \
+	--go_out=pkg/chatserverv1 --go_opt=paths=source_relative \
 	--plugin=protoc-gen-go=bin/protoc-gen-go \
-	--go-grpc_out=pkg/chat_server_v1 --go-grpc_opt=paths=source_relative \
+	--go-grpc_out=pkg/chatserverv1 --go-grpc_opt=paths=source_relative \
 	--plugin=protoc-gen-go-grpc=bin/protoc-gen-go-grpc \
-	api/proto/chat_server/v1/chat_server_service.proto api/proto/chat_server/v1/chat_server_messages.proto
+	api/proto/chat_server/v1/chat_server_service.proto
 
 local-migration-status:
 	$(LOCAL_BIN)/goose -dir ${LOCAL_MIGRATION_DIR} postgres ${LOCAL_MIGRATION_DSN} status -v

@@ -2,13 +2,31 @@ syntax = "proto3";
 
 package chat_server_v1;
 
-import "chat_server_messages.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/waryataw/chat_server/pkg/chat_server_v1";
+option go_package = "github.com/waryataw/chat_server/pkg/chatserverv1";
 
 service ChatServerService {
   rpc CreateChat(CreateChatRequest) returns (CreateChatResponse);
   rpc DeleteChat(DeleteChatRequest) returns (google.protobuf.Empty);
   rpc SendMessage(SendMessageRequest) returns (google.protobuf.Empty);
+}
+
+message CreateChatRequest {
+  repeated string usernames = 1;
+}
+
+message CreateChatResponse {
+  int64 id = 1;
+}
+
+message DeleteChatRequest {
+  int64 id = 1;
+}
+
+message SendMessageRequest {
+  string from = 1;
+  string text = 2;
+  google.protobuf.Timestamp timestamp = 3;
 }
