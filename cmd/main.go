@@ -54,16 +54,20 @@ func (s *server) CreateChat(ctx context.Context, req *chatserverv1.CreateChatReq
 		userIDs[index] = user.GetId()
 	}
 
-	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start transaction: %w", err)
 	}
 
 	defer func() {
 		if err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				log.Fatalf("failed to rollback transaction: %v", err)
-			}
+			_ = tx.Rollback(ctx)
+			return
+		}
+
+		err = tx.Commit(ctx)
+		if err != nil {
+			err = fmt.Errorf("committing save events: %w", err)
 		}
 	}()
 
@@ -100,10 +104,6 @@ func (s *server) CreateChat(ctx context.Context, req *chatserverv1.CreateChatReq
 		if _, err := tx.Exec(ctx, sql, args...); err != nil {
 			return nil, fmt.Errorf("failed to insert chat_user: %w", err)
 		}
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return &chatserverv1.CreateChatResponse{Id: chatID}, nil
