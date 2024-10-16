@@ -7,10 +7,12 @@ import (
 	"log"
 	"net"
 
+	"github.com/caarlos0/env/v11"
+	"github.com/waryataw/chat-server/internal/config"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 
-	"github.com/waryataw/chat-server/internal/config"
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -28,6 +30,12 @@ var configPath string
 
 func init() {
 	flag.StringVar(&configPath, "config-path", ".env", "path to config file")
+}
+
+type appConfig struct {
+	Chat     config.ChatServerGRPCConfig
+	Auth     config.AuthGRPCConfig
+	Postgres config.PgConfig
 }
 
 type server struct {
@@ -182,47 +190,40 @@ func main() {
 	flag.Parse()
 	ctx := context.Background()
 
-	err := config.Load(configPath)
-	if err != nil {
+	if err := config.Load(configPath); err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	grpcConfig, err := config.NewGRPCConfig()
-	if err != nil {
-		log.Fatalf("failed to get grpc config: %v", err)
+	var cfg appConfig
+	if err := env.Parse(&cfg); err != nil {
+		log.Fatalf("failed to parse config: %v", err)
 	}
 
-	grpcClientConfig, err := config.NewGRPCClientConfig()
-	if err != nil {
-		log.Fatalf("failed to get grpc client config: %v", err)
-	}
-
-	conn, err := grpc.NewClient(
-		grpcClientConfig.Address(),
+	authClient, err := grpc.NewClient(
+		net.JoinHostPort(cfg.Auth.Host, cfg.Auth.Port),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
 		log.Fatalf("failed to connect to Auth server: %v", err)
 	}
-	defer func(conn *grpc.ClientConn) {
-		err := conn.Close()
+
+	defer func() {
+		err := authClient.Close()
 		if err != nil {
 			log.Fatalf("failed to close grpc connection: %v", err)
 		}
-	}(conn)
+	}()
 
-	pgConfig, err := config.NewPGConfig()
-	if err != nil {
-		log.Fatalf("failed to get pg config: %v", err)
-	}
-
-	lis, err := net.Listen("tcp", grpcConfig.Address())
+	listener, err := net.Listen(
+		"tcp",
+		net.JoinHostPort(cfg.Chat.Host, cfg.Chat.Port),
+	)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
 	// Создаем пул соединений с базой данных
-	pool, err := pgxpool.New(ctx, pgConfig.DSN())
+	pool, err := pgxpool.New(ctx, cfg.Postgres.Dsn)
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
@@ -231,13 +232,13 @@ func main() {
 	s := grpc.NewServer()
 	reflection.Register(s)
 
-	client := authv1.NewAuthServiceClient(conn)
+	client := authv1.NewAuthServiceClient(authClient)
 
 	chatserverv1.RegisterChatServerServiceServer(s, &server{pool: pool, authClient: client})
 
-	log.Printf("server listening at %v", lis.Addr())
+	log.Printf("server listening at %v", listener.Addr())
 
-	if err := s.Serve(lis); err != nil {
+	if err := s.Serve(listener); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
 }
