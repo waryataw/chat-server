@@ -7,10 +7,12 @@ import (
 	"log"
 	"net"
 
+	"github.com/caarlos0/env/v11"
+	"github.com/waryataw/chat-server/internal/config"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 
-	"github.com/waryataw/chat-server/internal/config"
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -182,28 +184,28 @@ func main() {
 	flag.Parse()
 	ctx := context.Background()
 
-	err := config.Load(configPath)
-	if err != nil {
+	if err := config.Load(configPath); err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	grpcConfig, err := config.NewGRPCConfig()
-	if err != nil {
-		log.Fatalf("failed to get grpc config: %v", err)
+	var chatServerGrpcConfig config.ChatServerGRPCConfig
+	if err := env.Parse(&chatServerGrpcConfig); err != nil {
+		log.Fatalf("failed to get grpc config_old: %v", err)
 	}
 
-	grpcClientConfig, err := config.NewGRPCClientConfig()
-	if err != nil {
-		log.Fatalf("failed to get grpc client config: %v", err)
+	var authGrpcConfig config.AuthGRPCConfig
+	if err := env.Parse(&authGrpcConfig); err != nil {
+		log.Fatalf("failed to get grpc client config_old: %v", err)
 	}
 
 	conn, err := grpc.NewClient(
-		grpcClientConfig.Address(),
+		net.JoinHostPort(authGrpcConfig.Host, authGrpcConfig.Port),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
 		log.Fatalf("failed to connect to Auth server: %v", err)
 	}
+
 	defer func(conn *grpc.ClientConn) {
 		err := conn.Close()
 		if err != nil {
@@ -211,18 +213,21 @@ func main() {
 		}
 	}(conn)
 
-	pgConfig, err := config.NewPGConfig()
-	if err != nil {
-		log.Fatalf("failed to get pg config: %v", err)
+	var pgConfig config.PgConfig
+	if err := env.Parse(&pgConfig); err != nil {
+		log.Fatalf("failed to get pg config_old: %v", err)
 	}
 
-	lis, err := net.Listen("tcp", grpcConfig.Address())
+	lis, err := net.Listen(
+		"tcp",
+		net.JoinHostPort(chatServerGrpcConfig.Host, chatServerGrpcConfig.Port),
+	)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
 	// Создаем пул соединений с базой данных
-	pool, err := pgxpool.New(ctx, pgConfig.DSN())
+	pool, err := pgxpool.New(ctx, pgConfig.Dsn)
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
