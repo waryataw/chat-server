@@ -32,6 +32,12 @@ func init() {
 	flag.StringVar(&configPath, "config-path", ".env", "path to config file")
 }
 
+type appConfig struct {
+	Chat     config.ChatServerGRPCConfig
+	Auth     config.AuthGRPCConfig
+	Postgres config.PgConfig
+}
+
 type server struct {
 	chatserverv1.UnimplementedChatServerServiceServer
 	pool       *pgxpool.Pool
@@ -188,46 +194,36 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	var chatServerGrpcConfig config.ChatServerGRPCConfig
-	if err := env.Parse(&chatServerGrpcConfig); err != nil {
-		log.Fatalf("failed to get grpc config_old: %v", err)
+	var cfg appConfig
+	if err := env.Parse(&cfg); err != nil {
+		log.Fatalf("failed to parse config: %v", err)
 	}
 
-	var authGrpcConfig config.AuthGRPCConfig
-	if err := env.Parse(&authGrpcConfig); err != nil {
-		log.Fatalf("failed to get grpc client config_old: %v", err)
-	}
-
-	conn, err := grpc.NewClient(
-		net.JoinHostPort(authGrpcConfig.Host, authGrpcConfig.Port),
+	authClient, err := grpc.NewClient(
+		net.JoinHostPort(cfg.Auth.Host, cfg.Auth.Port),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
 		log.Fatalf("failed to connect to Auth server: %v", err)
 	}
 
-	defer func(conn *grpc.ClientConn) {
-		err := conn.Close()
+	defer func() {
+		err := authClient.Close()
 		if err != nil {
 			log.Fatalf("failed to close grpc connection: %v", err)
 		}
-	}(conn)
+	}()
 
-	var pgConfig config.PgConfig
-	if err := env.Parse(&pgConfig); err != nil {
-		log.Fatalf("failed to get pg config_old: %v", err)
-	}
-
-	lis, err := net.Listen(
+	listener, err := net.Listen(
 		"tcp",
-		net.JoinHostPort(chatServerGrpcConfig.Host, chatServerGrpcConfig.Port),
+		net.JoinHostPort(cfg.Chat.Host, cfg.Chat.Port),
 	)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
 	// Создаем пул соединений с базой данных
-	pool, err := pgxpool.New(ctx, pgConfig.Dsn)
+	pool, err := pgxpool.New(ctx, cfg.Postgres.Dsn)
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
@@ -236,13 +232,13 @@ func main() {
 	s := grpc.NewServer()
 	reflection.Register(s)
 
-	client := authv1.NewAuthServiceClient(conn)
+	client := authv1.NewAuthServiceClient(authClient)
 
 	chatserverv1.RegisterChatServerServiceServer(s, &server{pool: pool, authClient: client})
 
-	log.Printf("server listening at %v", lis.Addr())
+	log.Printf("server listening at %v", listener.Addr())
 
-	if err := s.Serve(lis); err != nil {
+	if err := s.Serve(listener); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
 }
