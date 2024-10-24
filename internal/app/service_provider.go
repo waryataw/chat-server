@@ -137,6 +137,7 @@ func (s *serviceProvider) ChatService(ctx context.Context) service.ChatService {
 		s.chatService = chatService.NewService(
 			s.AuthRepository(ctx),
 			s.ChatRepository(ctx),
+			s.TxManager(ctx),
 		)
 	}
 

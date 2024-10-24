@@ -18,7 +18,17 @@ func (s *chatService) Create(ctx context.Context, usernames []string) (int64, er
 		users[index] = user
 	}
 
-	id, err := s.chatRepository.Create(ctx, users)
+	var id int64
+	err := s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		var errTx error
+		id, errTx = s.chatRepository.Create(ctx, users)
+		if errTx != nil {
+			return errTx
+		}
+
+		return nil
+	})
+
 	if err != nil {
 		return 0, fmt.Errorf("failed create chat: %w", err)
 	}
