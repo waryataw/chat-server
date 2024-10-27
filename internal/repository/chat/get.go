@@ -12,7 +12,7 @@ import (
 )
 
 func (r *repo) Get(ctx context.Context, user *model.User) (*model.Chat, error) {
-	// Пока выберу первый попавшийся, потом будет совсем иначе все
+	// Пока выберу первый попавшийся, потом будет совсем иначе все.
 	builderSelect := sq.
 		Select(
 			"chat.id",

@@ -12,7 +12,7 @@ const (
 	grpcClientPortEnvName = "GRPC_AUTH_PORT"
 )
 
-// GRPCClientConfig GRPCConfig GRPC config
+// GRPCClientConfig GRPCConfig GRPC config.
 type GRPCClientConfig interface {
 	Address() string
 }
@@ -22,7 +22,7 @@ type grpcClientConfig struct {
 	port string
 }
 
-// NewGRPCClientConfig NewGRPCConfig GRPC config constructor
+// NewGRPCClientConfig NewGRPCConfig GRPC config constructor.
 func NewGRPCClientConfig() (GRPCClientConfig, error) {
 	host := os.Getenv(grpcClientHostEnvName)
 	if len(host) == 0 {

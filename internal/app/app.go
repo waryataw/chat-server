@@ -16,13 +16,13 @@ import (
 	"github.com/waryataw/chat-server/internal/config"
 )
 
-// App Приложение
+// App Приложение.
 type App struct {
 	serviceProvider *serviceProvider
 	grpcServer      *grpc.Server
 }
 
-// NewApp Конструктор приложения
+// NewApp Конструктор приложения.
 func NewApp(ctx context.Context) (*App, error) {
 	a := &App{}
 
@@ -34,7 +34,7 @@ func NewApp(ctx context.Context) (*App, error) {
 	return a, nil
 }
 
-// Run Запуск GRPC сервера
+// Run Запуск GRPC сервера.
 func (a *App) Run() error {
 	defer func() {
 		closer.CloseAll()

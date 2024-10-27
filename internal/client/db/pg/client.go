@@ -13,7 +13,7 @@ type pgClient struct {
 	masterDBC db.DB
 }
 
-// New Конструктор клиента для работы с БД
+// New Конструктор клиента для работы с БД.
 func New(ctx context.Context, dsn string) (db.Client, error) {
 	dbc, err := pgxpool.New(ctx, dsn)
 	if err != nil {

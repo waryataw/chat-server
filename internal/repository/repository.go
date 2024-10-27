@@ -6,7 +6,7 @@ import (
 	"github.com/waryataw/chat-server/internal/model"
 )
 
-// ChatRepository Репозиторий сервиса чата
+// ChatRepository Репозиторий сервиса чата.
 type ChatRepository interface {
 	Create(ctx context.Context, users []*model.User) (int64, error)
 	Delete(ctx context.Context, id int64) error
@@ -14,7 +14,7 @@ type ChatRepository interface {
 	Get(ctx context.Context, user *model.User) (*model.Chat, error)
 }
 
-// AuthRepository Репозиторий внешнего Auth сервера
+// AuthRepository Репозиторий внешнего Auth сервера.
 type AuthRepository interface {
 	GetUser(ctx context.Context, name string) (*model.User, error)
 }

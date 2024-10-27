@@ -12,7 +12,7 @@ import (
 )
 
 func (r *repo) CreateMessage(ctx context.Context, message *model.Message) error {
-	// Пока выберу первый попавшийся, потом будет совсем иначе все
+	// Пока выберу первый попавшийся, потом будет совсем иначе все.
 	builderSelect := sq.Select("chat_id").
 		From("chat_user").
 		Where(sq.Eq{"user_id": message.User.ID}).

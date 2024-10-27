@@ -9,7 +9,7 @@ type repo struct {
 	client authv1.AuthServiceClient
 }
 
-// NewRepository Конструктор репозитория пользователя
+// NewRepository Конструктор репозитория пользователя.
 func NewRepository(client authv1.AuthServiceClient) repository.AuthRepository {
 	return &repo{client: client}
 }

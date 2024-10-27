@@ -12,7 +12,7 @@ type chatService struct {
 	txManager      db.TxManager
 }
 
-// NewService Конструктор Чат сервиса
+// NewService Конструктор Чат сервиса.
 func NewService(
 	authRepository repository.AuthRepository,
 	chatRepository repository.ChatRepository,

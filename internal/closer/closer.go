@@ -9,7 +9,7 @@ import (
 
 var globalCloser = New()
 
-// Add adds `func() error` callback to the globalCloser
+// Add adds `func() error` callback to the globalCloser.
 func Add(f ...func() error) {
 	globalCloser.Add(f...)
 }
@@ -47,19 +47,19 @@ func New(sig ...os.Signal) *Closer {
 	return c
 }
 
-// Add func to closer
+// Add func to closer.
 func (c *Closer) Add(f ...func() error) {
 	c.mu.Lock()
 	c.funcs = append(c.funcs, f...)
 	c.mu.Unlock()
 }
 
-// Wait blocks until all closer functions are done
+// Wait blocks until all closer functions are done.
 func (c *Closer) Wait() {
 	<-c.done
 }
 
-// CloseAll calls all closer functions
+// CloseAll calls all closer functions.
 func (c *Closer) CloseAll() {
 	c.once.Do(func() {
 		defer close(c.done)
@@ -69,7 +69,7 @@ func (c *Closer) CloseAll() {
 		c.funcs = nil
 		c.mu.Unlock()
 
-		// call all Closer funcs async
+		// call all Closer funcs async.
 		errs := make(chan error, len(funcs))
 		for _, f := range funcs {
 			go func(f func() error) {

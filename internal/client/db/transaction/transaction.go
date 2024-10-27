@@ -21,7 +21,7 @@ func NewTransactionManager(db db.Transactor) db.TxManager {
 	}
 }
 
-// transaction основная функция, которая выполняет указанный пользователем обработчик в транзакции
+// transaction основная функция, которая выполняет указанный пользователем обработчик в транзакции.
 func (m *manager) transaction(ctx context.Context, opts pgx.TxOptions, fn db.Handler) (err error) {
 	// Если это вложенная транзакция, пропускаем инициацию новой транзакции и выполняем обработчик.
 	tx, ok := ctx.Value(pg.TxKey).(pgx.Tx)
@@ -40,12 +40,12 @@ func (m *manager) transaction(ctx context.Context, opts pgx.TxOptions, fn db.Han
 
 	// Настраиваем функцию отсрочки для отката или коммита транзакции.
 	defer func() {
-		// восстанавливаемся после паники
+		// восстанавливаемся после паники.
 		if r := recover(); r != nil {
 			err = errors.Errorf("panic recovered: %v", r)
 		}
 
-		// откатываем транзакцию, если произошла ошибка
+		// откатываем транзакцию, если произошла ошибка.
 		if err != nil {
 			if errRollback := tx.Rollback(ctx); errRollback != nil {
 				err = errors.Wrapf(err, "errRollback: %v", errRollback)
@@ -54,7 +54,7 @@ func (m *manager) transaction(ctx context.Context, opts pgx.TxOptions, fn db.Han
 			return
 		}
 
-		// если ошибок не было, коммитим транзакцию
+		// если ошибок не было, коммитим транзакцию.
 		if nil == err {
 			err = tx.Commit(ctx)
 			if err != nil {
