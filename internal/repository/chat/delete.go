@@ -8,6 +8,7 @@ import (
 	"github.com/waryataw/chat-server/internal/client/db"
 )
 
+// Delete Метод удаления чата.
 func (r *repo) Delete(ctx context.Context, id int64) error {
 	builder := sq.
 		Delete("chat").
@@ -15,7 +16,7 @@ func (r *repo) Delete(ctx context.Context, id int64) error {
 
 	sql, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
 	if err != nil {
-		return fmt.Errorf("failed to build query: %w", err)
+		return fmt.Errorf("failed to build chat delete query: %w", err)
 	}
 
 	query := db.Query{

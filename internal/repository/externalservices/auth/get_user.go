@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"github.com/waryataw/auth/pkg/authv1"
-	"github.com/waryataw/chat-server/internal/model"
+	"github.com/waryataw/chat-server/internal/models"
 )
 
-func (repo *repo) GetUser(ctx context.Context, name string) (*model.User, error) {
+func (repo *repo) GetUser(ctx context.Context, name string) (*models.User, error) {
 	user, err := repo.client.GetUser(ctx, &authv1.GetUserRequest{
 		Query: &authv1.GetUserRequest_Name{
 			Name: name,
@@ -18,5 +18,5 @@ func (repo *repo) GetUser(ctx context.Context, name string) (*model.User, error)
 		return nil, fmt.Errorf("failed get user from auth service: %w", err)
 	}
 
-	return &model.User{ID: user.GetId()}, nil
+	return &models.User{ID: user.GetId()}, nil
 }

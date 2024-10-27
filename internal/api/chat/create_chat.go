@@ -8,7 +8,7 @@ import (
 )
 
 // CreateChat Метод создания Чата.
-func (c *Controller) CreateChat(ctx context.Context, req *chatserverv1.CreateChatRequest) (*chatserverv1.CreateChatResponse, error) {
+func (c Controller) CreateChat(ctx context.Context, req *chatserverv1.CreateChatRequest) (*chatserverv1.CreateChatResponse, error) {
 	id, err := c.chatService.Create(ctx, req.Usernames)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create chat: %w", err)

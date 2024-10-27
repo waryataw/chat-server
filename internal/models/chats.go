@@ -1,11 +1,6 @@
-package model
+package models
 
 import "time"
-
-// User Пользователь.
-type User struct {
-	ID int64
-}
 
 // Chat Чат.
 type Chat struct {

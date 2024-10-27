@@ -8,10 +8,11 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/waryataw/chat-server/internal/client/db"
-	"github.com/waryataw/chat-server/internal/model"
+	"github.com/waryataw/chat-server/internal/models"
 )
 
-func (r *repo) CreateMessage(ctx context.Context, message *model.Message) error {
+// CreateMessage Метод создания сообщения.
+func (r *repo) CreateMessage(ctx context.Context, message *models.Message) error {
 	// Пока выберу первый попавшийся, потом будет совсем иначе все.
 	builderSelect := sq.Select("chat_id").
 		From("chat_user").
@@ -20,7 +21,7 @@ func (r *repo) CreateMessage(ctx context.Context, message *model.Message) error 
 
 	sql, args, err := builderSelect.PlaceholderFormat(sq.Dollar).ToSql()
 	if err != nil {
-		return fmt.Errorf("failed to build query: %w", err)
+		return fmt.Errorf("failed to build chat selection query: %w", err)
 	}
 
 	query := db.Query{
@@ -50,7 +51,7 @@ func (r *repo) CreateMessage(ctx context.Context, message *model.Message) error 
 
 	sql, args, err = builderInsert.PlaceholderFormat(sq.Dollar).ToSql()
 	if err != nil {
-		return fmt.Errorf("failed to build query to insert message: %w", err)
+		return fmt.Errorf("failed to build message insertation query: %w", err)
 	}
 
 	queryInsert := db.Query{

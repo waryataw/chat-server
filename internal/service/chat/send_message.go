@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/waryataw/chat-server/internal/model"
+	"github.com/waryataw/chat-server/internal/models"
 )
 
 func (s *chatService) SendMessage(ctx context.Context, from string, text string) error {
@@ -18,7 +18,7 @@ func (s *chatService) SendMessage(ctx context.Context, from string, text string)
 		return fmt.Errorf("failed to get chat: %w", err)
 	}
 
-	message := model.Message{
+	message := models.Message{
 		Chat: chat,
 		User: user,
 		Text: text,

@@ -129,6 +129,7 @@ func (s *serviceProvider) ChatRepository(ctx context.Context) repository.ChatRep
 	if s.chatRepository == nil {
 		s.chatRepository = chatRepository.NewRepository(s.DBClient(ctx))
 	}
+
 	return s.chatRepository
 }
 

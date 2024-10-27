@@ -9,7 +9,7 @@ import (
 )
 
 // SendMessage Метод отправки сообщения в чат.
-func (c *Controller) SendMessage(ctx context.Context, req *chatserverv1.SendMessageRequest) (*emptypb.Empty, error) {
+func (c Controller) SendMessage(ctx context.Context, req *chatserverv1.SendMessageRequest) (*emptypb.Empty, error) {
 	if err := c.chatService.SendMessage(ctx, req.GetFrom(), req.GetText()); err != nil {
 		return nil, fmt.Errorf("failed to send message: %w", err)
 	}

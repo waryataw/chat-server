@@ -88,12 +88,12 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 func (a *App) runGRPCServer() error {
 	log.Printf("GRPC server is running on %s", a.serviceProvider.GRPCConfig().Address())
 
-	list, err := net.Listen("tcp", a.serviceProvider.GRPCConfig().Address())
+	listener, err := net.Listen("tcp", a.serviceProvider.GRPCConfig().Address())
 	if err != nil {
 		return fmt.Errorf("failed to listen: %w", err)
 	}
 
-	err = a.grpcServer.Serve(list)
+	err = a.grpcServer.Serve(listener)
 	if err != nil {
 		return fmt.Errorf("failed to serve: %w", err)
 	}

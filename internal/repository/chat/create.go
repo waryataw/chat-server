@@ -6,10 +6,11 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/waryataw/chat-server/internal/client/db"
-	"github.com/waryataw/chat-server/internal/model"
+	"github.com/waryataw/chat-server/internal/models"
 )
 
-func (r *repo) Create(ctx context.Context, users []*model.User) (int64, error) {
+// Create Метод создания Чата.
+func (r *repo) Create(ctx context.Context, users []*models.User) (int64, error) {
 	builder := sq.Insert("chat").
 		Columns("created_at").
 		Values(sq.Expr("NOW()")).
@@ -17,7 +18,7 @@ func (r *repo) Create(ctx context.Context, users []*model.User) (int64, error) {
 
 	sql, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
 	if err != nil {
-		return 0, fmt.Errorf("failed to build query to insert chat: %w", err)
+		return 0, fmt.Errorf("failed to build chat insertion query: %w", err)
 	}
 
 	query := db.Query{
@@ -40,7 +41,7 @@ func (r *repo) Create(ctx context.Context, users []*model.User) (int64, error) {
 
 		sql, args, err = builderInsert.PlaceholderFormat(sq.Dollar).ToSql()
 		if err != nil {
-			return 0, fmt.Errorf("failed to build query to insert chat_user: %w", err)
+			return 0, fmt.Errorf("failed to build chat_user insertion query: %w", err)
 		}
 
 		queryInsertChatUser := db.Query{

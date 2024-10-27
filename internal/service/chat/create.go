@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/waryataw/chat-server/internal/model"
+	"github.com/waryataw/chat-server/internal/models"
 )
 
 func (s *chatService) Create(ctx context.Context, usernames []string) (int64, error) {
-	users := make([]*model.User, len(usernames))
+	users := make([]*models.User, len(usernames))
 	for index, username := range usernames {
 		user, err := s.authRepository.GetUser(ctx, username)
 		if err != nil {
@@ -20,13 +20,10 @@ func (s *chatService) Create(ctx context.Context, usernames []string) (int64, er
 
 	var id int64
 	err := s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
-		var errTx error
-		id, errTx = s.chatRepository.Create(ctx, users)
-		if errTx != nil {
-			return errTx
-		}
+		var err error
+		id, err = s.chatRepository.Create(ctx, users)
 
-		return nil
+		return err
 	})
 
 	if err != nil {
