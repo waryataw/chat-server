@@ -80,7 +80,7 @@ func (a *App) initGRPCServer(ctx context.Context) error {
 
 	reflection.Register(a.grpcServer)
 
-	chatserverv1.RegisterChatServerServiceServer(a.grpcServer, a.serviceProvider.ChatImpl(ctx))
+	chatserverv1.RegisterChatServerServiceServer(a.grpcServer, a.serviceProvider.ChatController(ctx))
 
 	return nil
 }

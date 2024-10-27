@@ -9,8 +9,8 @@ import (
 )
 
 // DeleteChat Метод удаления чата.
-func (i *Implementation) DeleteChat(ctx context.Context, req *chatserverv1.DeleteChatRequest) (*emptypb.Empty, error) {
-	if err := i.chatService.Delete(ctx, req.GetId()); err != nil {
+func (c *Controller) DeleteChat(ctx context.Context, req *chatserverv1.DeleteChatRequest) (*emptypb.Empty, error) {
+	if err := c.chatService.Delete(ctx, req.GetId()); err != nil {
 		return nil, fmt.Errorf("failed to delete chat: %w", err)
 	}
 

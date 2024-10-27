@@ -35,7 +35,7 @@ type serviceProvider struct {
 
 	chatService service.ChatService
 
-	chatImpl *chat.Implementation
+	chatController *chat.Controller
 }
 
 func newServiceProvider() *serviceProvider {
@@ -144,10 +144,10 @@ func (s *serviceProvider) ChatService(ctx context.Context) service.ChatService {
 	return s.chatService
 }
 
-func (s *serviceProvider) ChatImpl(ctx context.Context) *chat.Implementation {
-	if s.chatImpl == nil {
-		s.chatImpl = chat.NewImplementation(s.ChatService(ctx))
+func (s *serviceProvider) ChatController(ctx context.Context) *chat.Controller {
+	if s.chatController == nil {
+		s.chatController = chat.NewController(s.ChatService(ctx))
 	}
 
-	return s.chatImpl
+	return s.chatController
 }
