@@ -6,14 +6,12 @@ import (
 	"log"
 	"net"
 
+	"github.com/waryataw/chat-server/internal/closer"
+	"github.com/waryataw/chat-server/internal/config"
 	"github.com/waryataw/chat-server/pkg/chatserverv1"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
-
-	"github.com/waryataw/chat-server/internal/closer"
-	"github.com/waryataw/chat-server/internal/config"
 )
 
 // App Приложение.

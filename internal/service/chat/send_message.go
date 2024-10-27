@@ -13,7 +13,7 @@ func (s *chatService) SendMessage(ctx context.Context, from string, text string)
 		return fmt.Errorf("failed to get user: %w", err)
 	}
 
-	chat, err := s.chatRepository.Get(ctx, user)
+	chat, err := s.repository.Get(ctx, user)
 	if err != nil {
 		return fmt.Errorf("failed to get chat: %w", err)
 	}
@@ -24,7 +24,7 @@ func (s *chatService) SendMessage(ctx context.Context, from string, text string)
 		Text: text,
 	}
 
-	if err := s.chatRepository.CreateMessage(ctx, &message); err != nil {
+	if err := s.repository.CreateMessage(ctx, &message); err != nil {
 		return fmt.Errorf("failed to create chat message: %w", err)
 	}
 

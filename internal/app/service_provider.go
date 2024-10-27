@@ -5,21 +5,17 @@ import (
 	"log"
 
 	"github.com/waryataw/auth/pkg/authv1"
+	"github.com/waryataw/chat-server/internal/api/chat"
+	"github.com/waryataw/chat-server/internal/client/db"
+	"github.com/waryataw/chat-server/internal/client/db/pg"
 	"github.com/waryataw/chat-server/internal/client/db/transaction"
-	"github.com/waryataw/chat-server/internal/repository"
+	"github.com/waryataw/chat-server/internal/closer"
+	"github.com/waryataw/chat-server/internal/config"
 	chatRepository "github.com/waryataw/chat-server/internal/repository/chat"
 	authRepository "github.com/waryataw/chat-server/internal/repository/externalservices/auth"
-	"github.com/waryataw/chat-server/internal/service"
 	chatService "github.com/waryataw/chat-server/internal/service/chat"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
-	"github.com/waryataw/chat-server/internal/api/chat"
-
-	"github.com/waryataw/chat-server/internal/client/db"
-	"github.com/waryataw/chat-server/internal/client/db/pg"
-	"github.com/waryataw/chat-server/internal/closer"
-	"github.com/waryataw/chat-server/internal/config"
 )
 
 type serviceProvider struct {
@@ -28,12 +24,12 @@ type serviceProvider struct {
 
 	dbClient       db.Client
 	txManager      db.TxManager
-	chatRepository repository.ChatRepository
+	chatRepository chatService.Repository
 
 	authClient     authv1.AuthServiceClient
-	authRepository repository.AuthRepository
+	authRepository chatService.AuthRepository
 
-	chatService service.ChatService
+	chatService chat.Service
 
 	chatController *chat.Controller
 }
@@ -117,7 +113,7 @@ func (s *serviceProvider) TxManager(ctx context.Context) db.TxManager {
 	return s.txManager
 }
 
-func (s *serviceProvider) AuthRepository(ctx context.Context) repository.AuthRepository {
+func (s *serviceProvider) AuthRepository(ctx context.Context) chatService.AuthRepository {
 	if s.authRepository == nil {
 		s.authRepository = authRepository.NewRepository(s.AuthClient(ctx))
 	}
@@ -125,7 +121,7 @@ func (s *serviceProvider) AuthRepository(ctx context.Context) repository.AuthRep
 	return s.authRepository
 }
 
-func (s *serviceProvider) ChatRepository(ctx context.Context) repository.ChatRepository {
+func (s *serviceProvider) ChatRepository(ctx context.Context) chatService.Repository {
 	if s.chatRepository == nil {
 		s.chatRepository = chatRepository.NewRepository(s.DBClient(ctx))
 	}
@@ -133,7 +129,7 @@ func (s *serviceProvider) ChatRepository(ctx context.Context) repository.ChatRep
 	return s.chatRepository
 }
 
-func (s *serviceProvider) ChatService(ctx context.Context) service.ChatService {
+func (s *serviceProvider) ChatService(ctx context.Context) chat.Service {
 	if s.chatService == nil {
 		s.chatService = chatService.NewService(
 			s.AuthRepository(ctx),

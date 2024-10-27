@@ -6,11 +6,9 @@ import (
 	"log"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
-
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-
 	"github.com/waryataw/chat-server/internal/client/db"
 	"github.com/waryataw/chat-server/internal/client/db/prettier"
 )

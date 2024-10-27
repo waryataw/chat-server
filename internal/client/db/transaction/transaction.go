@@ -5,7 +5,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
-
 	"github.com/waryataw/chat-server/internal/client/db"
 	"github.com/waryataw/chat-server/internal/client/db/pg"
 )

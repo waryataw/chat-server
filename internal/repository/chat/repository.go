@@ -2,7 +2,7 @@ package user
 
 import (
 	"github.com/waryataw/chat-server/internal/client/db"
-	"github.com/waryataw/chat-server/internal/repository"
+	"github.com/waryataw/chat-server/internal/service/chat"
 )
 
 type repo struct {
@@ -10,6 +10,6 @@ type repo struct {
 }
 
 // NewRepository Конструктор репозитория пользователя.
-func NewRepository(db db.Client) repository.ChatRepository {
+func NewRepository(db db.Client) chat.Repository {
 	return &repo{db: db}
 }

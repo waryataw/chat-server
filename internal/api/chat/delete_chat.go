@@ -10,7 +10,7 @@ import (
 
 // DeleteChat Метод удаления чата.
 func (c Controller) DeleteChat(ctx context.Context, req *chatserverv1.DeleteChatRequest) (*emptypb.Empty, error) {
-	if err := c.chatService.Delete(ctx, req.GetId()); err != nil {
+	if err := c.service.Delete(ctx, req.GetId()); err != nil {
 		return nil, fmt.Errorf("failed to delete chat: %w", err)
 	}
 

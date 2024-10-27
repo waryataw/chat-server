@@ -1,4 +1,4 @@
-package repository
+package chat
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	"github.com/waryataw/chat-server/internal/models"
 )
 
-// ChatRepository Репозиторий сервиса чата.
-type ChatRepository interface {
+// Repository Репозиторий сервиса чата.
+type Repository interface {
 	Create(ctx context.Context, users []*models.User) (int64, error)
 	Delete(ctx context.Context, id int64) error
 	CreateMessage(ctx context.Context, message *models.Message) error
