@@ -7,12 +7,12 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
-	"github.com/waryataw/chat-server/internal/client/db"
+	"github.com/waryataw/auth/pkg/client/db"
 	"github.com/waryataw/chat-server/internal/models"
 )
 
 // Get Метод получения чата для пользователя.
-func (r *repo) Get(ctx context.Context, user *models.User) (*models.Chat, error) {
+func (r repo) Get(ctx context.Context, user *models.User) (*models.Chat, error) {
 	// Пока выберу первый попавшийся, потом будет совсем иначе все.
 	builderSelect := sq.
 		Select(

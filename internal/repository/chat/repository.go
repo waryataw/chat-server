@@ -1,7 +1,7 @@
 package user
 
 import (
-	"github.com/waryataw/chat-server/internal/client/db"
+	"github.com/waryataw/auth/pkg/client/db"
 	"github.com/waryataw/chat-server/internal/service/chat"
 )
 

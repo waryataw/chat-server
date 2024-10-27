@@ -8,7 +8,7 @@ import (
 	"github.com/waryataw/chat-server/internal/models"
 )
 
-func (repo *repo) GetUser(ctx context.Context, name string) (*models.User, error) {
+func (repo repo) GetUser(ctx context.Context, name string) (*models.User, error) {
 	user, err := repo.client.GetUser(ctx, &authv1.GetUserRequest{
 		Query: &authv1.GetUserRequest_Name{
 			Name: name,

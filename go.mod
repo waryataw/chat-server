@@ -8,7 +8,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/joho/godotenv v1.5.1
 	github.com/pkg/errors v0.9.1
-	github.com/waryataw/auth v0.0.0-20241014124553-4ea8201e69dd
+	github.com/waryataw/auth v0.0.0-20241027143403-f4559c1662b4
 	google.golang.org/grpc v1.67.1
 	google.golang.org/protobuf v1.34.2
 )

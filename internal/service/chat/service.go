@@ -1,8 +1,8 @@
 package chat
 
 import (
+	"github.com/waryataw/auth/pkg/client/db"
 	"github.com/waryataw/chat-server/internal/api/chat"
-	"github.com/waryataw/chat-server/internal/client/db"
 )
 
 type chatService struct {

@@ -7,7 +7,7 @@ import (
 	"github.com/waryataw/chat-server/internal/models"
 )
 
-func (s *chatService) Create(ctx context.Context, usernames []string) (int64, error) {
+func (s chatService) Create(ctx context.Context, usernames []string) (int64, error) {
 	users := make([]*models.User, len(usernames))
 	for index, username := range usernames {
 		user, err := s.authRepository.GetUser(ctx, username)

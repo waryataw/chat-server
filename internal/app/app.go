@@ -6,7 +6,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/waryataw/chat-server/internal/closer"
+	"github.com/waryataw/auth/pkg/closer"
 	"github.com/waryataw/chat-server/internal/config"
 	"github.com/waryataw/chat-server/pkg/chatserverv1"
 	"google.golang.org/grpc"

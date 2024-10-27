@@ -41,6 +41,8 @@ github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcU
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/waryataw/auth v0.0.0-20241014124553-4ea8201e69dd h1:8kh4zWfLUmtJ6TD9XdfgpQUYzyIe9o2uIcTqCaZlk4g=
 github.com/waryataw/auth v0.0.0-20241014124553-4ea8201e69dd/go.mod h1:XtY+yUJrvAlXiEp4Fi1UcA66aLMftB6I5phGUi1OnRg=
+github.com/waryataw/auth v0.0.0-20241027143403-f4559c1662b4 h1:/7G/9DJ6py3zvG3yz631KU/KjB9smruk8ho1gVVzCL0=
+github.com/waryataw/auth v0.0.0-20241027143403-f4559c1662b4/go.mod h1:HxZP1urkN40V1WP2mETJE3lgUa1kuRxmeAQ0F3K7GEU=
 golang.org/x/crypto v0.27.0 h1:GXm2NjJrPaiv/h1tb2UH8QfgC/hOf/+z0p6PT8o1w7A=
 golang.org/x/crypto v0.27.0/go.mod h1:1Xngt8kV6Dvbssa53Ziq6Eqn0HqbZi5Z6R0ZpwQzt70=
 golang.org/x/net v0.28.0 h1:a9JDOJc5GMUJ0+UDqmLT86WiEy7iWyIhz8gz8E4e5hE=

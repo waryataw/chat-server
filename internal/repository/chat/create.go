@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/waryataw/chat-server/internal/client/db"
+	"github.com/waryataw/auth/pkg/client/db"
 	"github.com/waryataw/chat-server/internal/models"
 )
 
 // Create Метод создания Чата.
-func (r *repo) Create(ctx context.Context, users []*models.User) (int64, error) {
+func (r repo) Create(ctx context.Context, users []*models.User) (int64, error) {
 	builder := sq.Insert("chat").
 		Columns("created_at").
 		Values(sq.Expr("NOW()")).

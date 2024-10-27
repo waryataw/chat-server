@@ -7,12 +7,12 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
-	"github.com/waryataw/chat-server/internal/client/db"
+	"github.com/waryataw/auth/pkg/client/db"
 	"github.com/waryataw/chat-server/internal/models"
 )
 
 // CreateMessage Метод создания сообщения.
-func (r *repo) CreateMessage(ctx context.Context, message *models.Message) error {
+func (r repo) CreateMessage(ctx context.Context, message *models.Message) error {
 	// Пока выберу первый попавшийся, потом будет совсем иначе все.
 	builderSelect := sq.Select("chat_id").
 		From("chat_user").

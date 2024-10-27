@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/waryataw/chat-server/internal/client/db"
+	"github.com/waryataw/auth/pkg/client/db"
 )
 
 // Delete Метод удаления чата.
-func (r *repo) Delete(ctx context.Context, id int64) error {
+func (r repo) Delete(ctx context.Context, id int64) error {
 	builder := sq.
 		Delete("chat").
 		Where(sq.Eq{"id": id})

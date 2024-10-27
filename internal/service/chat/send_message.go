@@ -7,7 +7,7 @@ import (
 	"github.com/waryataw/chat-server/internal/models"
 )
 
-func (s *chatService) SendMessage(ctx context.Context, from string, text string) error {
+func (s chatService) SendMessage(ctx context.Context, from string, text string) error {
 	user, err := s.authRepository.GetUser(ctx, from)
 	if err != nil {
 		return fmt.Errorf("failed to get user: %w", err)
