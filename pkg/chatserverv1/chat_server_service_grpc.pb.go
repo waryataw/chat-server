@@ -8,6 +8,7 @@ package chatserverv1
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -65,7 +66,7 @@ func (c *chatServerServiceClient) SendMessage(ctx context.Context, in *SendMessa
 
 // ChatServerServiceServer is the server API for ChatServerService service.
 // All implementations must embed UnimplementedChatServerServiceServer
-// for forward compatibility
+// for forward compatibility.
 type ChatServerServiceServer interface {
 	CreateChat(context.Context, *CreateChatRequest) (*CreateChatResponse, error)
 	DeleteChat(context.Context, *DeleteChatRequest) (*emptypb.Empty, error)

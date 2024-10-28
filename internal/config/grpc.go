@@ -12,7 +12,7 @@ const (
 	grpcPortEnvName = "GRPC_PORT"
 )
 
-// GRPCConfig GRPC config
+// GRPCConfig GRPC config.
 type GRPCConfig interface {
 	Address() string
 }
@@ -22,7 +22,7 @@ type grpcConfig struct {
 	port string
 }
 
-// NewGRPCConfig GRPC config constructor
+// NewGRPCConfig GRPC config constructor.
 func NewGRPCConfig() (GRPCConfig, error) {
 	host := os.Getenv(grpcHostEnvName)
 	if len(host) == 0 {
