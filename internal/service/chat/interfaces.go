@@ -6,6 +6,9 @@ import (
 	"github.com/waryataw/chat-server/internal/models"
 )
 
+//go:generate sh -c "rm -rf mocks && mkdir -p mocks"
+//go:generate ../../../bin/minimock -i github.com/waryataw/chat-server/internal/service/chat.* -o "./mocks/mocks.go"
+
 // Repository Репозиторий сервиса чата.
 type Repository interface {
 	Create(ctx context.Context, users []*models.User) (int64, error)
