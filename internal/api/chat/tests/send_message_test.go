@@ -3,6 +3,8 @@ package tests
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
@@ -10,7 +12,6 @@ import (
 	"github.com/waryataw/chat-server/internal/api/chat/mocks"
 	"github.com/waryataw/chat-server/pkg/chatserverv1"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"testing"
 )
 
 func TestSendMessage(t *testing.T) {

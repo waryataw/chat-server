@@ -3,13 +3,14 @@ package tests
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 	"github.com/waryataw/chat-server/internal/api/chat"
 	"github.com/waryataw/chat-server/internal/api/chat/mocks"
 	"github.com/waryataw/chat-server/pkg/chatserverv1"
-	"testing"
 )
 
 func TestCreateChat(t *testing.T) {
