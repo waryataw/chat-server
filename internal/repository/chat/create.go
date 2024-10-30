@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/waryataw/auth/pkg/client/db"
 	"github.com/waryataw/chat-server/internal/models"
+	"github.com/waryataw/platform_common/pkg/db"
 )
 
 // Create Метод создания Чата.

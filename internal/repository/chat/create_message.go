@@ -7,8 +7,8 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
-	"github.com/waryataw/auth/pkg/client/db"
 	"github.com/waryataw/chat-server/internal/models"
+	"github.com/waryataw/platform_common/pkg/db"
 )
 
 // CreateMessage Метод создания сообщения.
