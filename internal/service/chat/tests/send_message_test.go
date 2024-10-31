@@ -14,25 +14,38 @@ import (
 	"github.com/waryataw/platform_common/pkg/db"
 )
 
-func TestCreate(t *testing.T) {
+func TestSendMessage(t *testing.T) {
 	type repositoryMockBehavior func(mc *minimock.Controller) chat.Repository
 	type authRepositoryMockBehavior func(mc *minimock.Controller) chat.AuthRepository
 	type txManagerMockBehavior func(mc *minimock.Controller) db.TxManager
 
 	type args struct {
 		ctx       context.Context
-		usernames []string
+		username  string
+		message   *models.Message
+		modelChat *models.Chat
 	}
 
 	var (
 		ctx = context.Background()
 		mc  = minimock.NewController(t)
 
-		user      = &models.User{ID: gofakeit.Int64()}
-		usernames = []string{gofakeit.Username()}
+		userID   = gofakeit.Int64()
+		username = gofakeit.Username()
+		user     = &models.User{ID: userID}
 
-		authRepoErr  = fmt.Errorf("failed get user from auth service")
-		txManagerErr = fmt.Errorf("tx commit failed")
+		modelChat = &models.Chat{ID: gofakeit.Int64(), Users: []*models.User{user}}
+
+		message = &models.Message{
+			ID:   gofakeit.Int64(),
+			Chat: modelChat,
+			User: user,
+			Text: gofakeit.LoremIpsumSentence(5),
+		}
+
+		authRepoErr              = fmt.Errorf("failed get user from auth service")
+		repoGetUserErr           = fmt.Errorf("failed to get chat")
+		repoCreateChatMessageErr = fmt.Errorf("failed to create chat message")
 	)
 
 	tests := []struct {
@@ -48,44 +61,25 @@ func TestCreate(t *testing.T) {
 			"success case",
 			args{
 				ctx:       ctx,
-				usernames: usernames,
+				username:  username,
+				message:   message,
+				modelChat: modelChat,
 			},
 			0,
 			nil,
 			func(mc *minimock.Controller) chat.Repository {
 				mock := mocks.NewRepositoryMock(mc)
+				mock.GetMock.Expect(ctx, user).Return(modelChat, nil)
+				mock.CreateMessageMock.Set(func(_ context.Context, message *models.Message) (err error) {
+					require.Equal(t, modelChat.ID, message.Chat.ID)
+					return nil
+				})
 
 				return mock
 			},
 			func(mc *minimock.Controller) chat.AuthRepository {
 				mock := mocks.NewAuthRepositoryMock(mc)
-				mock.GetUserMock.Expect(ctx, usernames[0]).Return(user, nil)
-
-				return mock
-			},
-			func(mc *minimock.Controller) db.TxManager {
-				mock := mocks.NewTxManagerMock(mc)
-				mock.ReadCommittedMock.ExpectCtxParam1(ctx).Return(nil)
-
-				return mock
-			},
-		},
-		{
-			"auth repo error",
-			args{
-				ctx:       ctx,
-				usernames: usernames,
-			},
-			0,
-			fmt.Errorf("failed get user from auth service: %w", authRepoErr),
-			func(mc *minimock.Controller) chat.Repository {
-				mock := mocks.NewRepositoryMock(mc)
-
-				return mock
-			},
-			func(mc *minimock.Controller) chat.AuthRepository {
-				mock := mocks.NewAuthRepositoryMock(mc)
-				mock.GetUserMock.Expect(ctx, usernames[0]).Return(nil, authRepoErr)
+				mock.GetUserMock.Expect(ctx, username).Return(user, nil)
 
 				return mock
 			},
@@ -96,13 +90,15 @@ func TestCreate(t *testing.T) {
 			},
 		},
 		{
-			"tx manager error",
+			"auth repo error case",
 			args{
 				ctx:       ctx,
-				usernames: usernames,
+				username:  username,
+				message:   message,
+				modelChat: modelChat,
 			},
 			0,
-			fmt.Errorf("failed create chat: %w", txManagerErr),
+			fmt.Errorf("failed to get user: %w", authRepoErr),
 			func(mc *minimock.Controller) chat.Repository {
 				mock := mocks.NewRepositoryMock(mc)
 
@@ -110,13 +106,72 @@ func TestCreate(t *testing.T) {
 			},
 			func(mc *minimock.Controller) chat.AuthRepository {
 				mock := mocks.NewAuthRepositoryMock(mc)
-				mock.GetUserMock.Expect(ctx, usernames[0]).Return(user, nil)
+				mock.GetUserMock.Expect(ctx, username).Return(nil, authRepoErr)
 
 				return mock
 			},
 			func(mc *minimock.Controller) db.TxManager {
 				mock := mocks.NewTxManagerMock(mc)
-				mock.ReadCommittedMock.ExpectCtxParam1(ctx).Return(txManagerErr)
+
+				return mock
+			},
+		},
+		{
+			"repo get chat error case",
+			args{
+				ctx:       ctx,
+				username:  username,
+				message:   message,
+				modelChat: modelChat,
+			},
+			0,
+			fmt.Errorf("failed to get chat: %w", repoGetUserErr),
+			func(mc *minimock.Controller) chat.Repository {
+				mock := mocks.NewRepositoryMock(mc)
+				mock.GetMock.Expect(ctx, user).Return(modelChat, repoGetUserErr)
+
+				return mock
+			},
+			func(mc *minimock.Controller) chat.AuthRepository {
+				mock := mocks.NewAuthRepositoryMock(mc)
+				mock.GetUserMock.Expect(ctx, username).Return(user, nil)
+
+				return mock
+			},
+			func(mc *minimock.Controller) db.TxManager {
+				mock := mocks.NewTxManagerMock(mc)
+
+				return mock
+			},
+		},
+		{
+			"repo create chat message error case",
+			args{
+				ctx:       ctx,
+				username:  username,
+				message:   message,
+				modelChat: modelChat,
+			},
+			0,
+			fmt.Errorf("failed to create chat message: %w", repoCreateChatMessageErr),
+			func(mc *minimock.Controller) chat.Repository {
+				mock := mocks.NewRepositoryMock(mc)
+				mock.GetMock.Expect(ctx, user).Return(modelChat, nil)
+				mock.CreateMessageMock.Set(func(_ context.Context, message *models.Message) (err error) {
+					require.Equal(t, modelChat.ID, message.Chat.ID)
+					return repoCreateChatMessageErr
+				})
+
+				return mock
+			},
+			func(mc *minimock.Controller) chat.AuthRepository {
+				mock := mocks.NewAuthRepositoryMock(mc)
+				mock.GetUserMock.Expect(ctx, username).Return(user, nil)
+
+				return mock
+			},
+			func(mc *minimock.Controller) db.TxManager {
+				mock := mocks.NewTxManagerMock(mc)
 
 				return mock
 			},
@@ -133,9 +188,8 @@ func TestCreate(t *testing.T) {
 			txManagerMock := tt.txManagerMockBehavior(mc)
 			service := chat.NewService(authRepositoryMock, repositoryMock, txManagerMock)
 
-			response, err := service.Create(tt.args.ctx, tt.args.usernames)
+			err := service.SendMessage(tt.args.ctx, tt.args.username, tt.args.message.Text)
 
-			require.Equal(t, tt.want, response)
 			if tt.err != nil {
 				require.EqualError(t, err, tt.err.Error())
 			}

@@ -8,31 +8,28 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
-	"github.com/waryataw/chat-server/internal/models"
 	"github.com/waryataw/chat-server/internal/service/chat"
 	"github.com/waryataw/chat-server/internal/service/chat/mocks"
 	"github.com/waryataw/platform_common/pkg/db"
 )
 
-func TestCreate(t *testing.T) {
+func TestDelete(t *testing.T) {
 	type repositoryMockBehavior func(mc *minimock.Controller) chat.Repository
 	type authRepositoryMockBehavior func(mc *minimock.Controller) chat.AuthRepository
 	type txManagerMockBehavior func(mc *minimock.Controller) db.TxManager
 
 	type args struct {
-		ctx       context.Context
-		usernames []string
+		ctx context.Context
+		id  int64
 	}
 
 	var (
 		ctx = context.Background()
 		mc  = minimock.NewController(t)
 
-		user      = &models.User{ID: gofakeit.Int64()}
-		usernames = []string{gofakeit.Username()}
+		id = gofakeit.Int64()
 
-		authRepoErr  = fmt.Errorf("failed get user from auth service")
-		txManagerErr = fmt.Errorf("tx commit failed")
+		repoError = fmt.Errorf("failed to delete chat %d", id)
 	)
 
 	tests := []struct {
@@ -47,45 +44,19 @@ func TestCreate(t *testing.T) {
 		{
 			"success case",
 			args{
-				ctx:       ctx,
-				usernames: usernames,
+				ctx: ctx,
+				id:  id,
 			},
 			0,
 			nil,
 			func(mc *minimock.Controller) chat.Repository {
 				mock := mocks.NewRepositoryMock(mc)
+				mock.DeleteMock.Expect(ctx, id).Return(nil)
 
 				return mock
 			},
 			func(mc *minimock.Controller) chat.AuthRepository {
 				mock := mocks.NewAuthRepositoryMock(mc)
-				mock.GetUserMock.Expect(ctx, usernames[0]).Return(user, nil)
-
-				return mock
-			},
-			func(mc *minimock.Controller) db.TxManager {
-				mock := mocks.NewTxManagerMock(mc)
-				mock.ReadCommittedMock.ExpectCtxParam1(ctx).Return(nil)
-
-				return mock
-			},
-		},
-		{
-			"auth repo error",
-			args{
-				ctx:       ctx,
-				usernames: usernames,
-			},
-			0,
-			fmt.Errorf("failed get user from auth service: %w", authRepoErr),
-			func(mc *minimock.Controller) chat.Repository {
-				mock := mocks.NewRepositoryMock(mc)
-
-				return mock
-			},
-			func(mc *minimock.Controller) chat.AuthRepository {
-				mock := mocks.NewAuthRepositoryMock(mc)
-				mock.GetUserMock.Expect(ctx, usernames[0]).Return(nil, authRepoErr)
 
 				return mock
 			},
@@ -96,27 +67,26 @@ func TestCreate(t *testing.T) {
 			},
 		},
 		{
-			"tx manager error",
+			"repo error case",
 			args{
-				ctx:       ctx,
-				usernames: usernames,
+				ctx: ctx,
+				id:  id,
 			},
 			0,
-			fmt.Errorf("failed create chat: %w", txManagerErr),
+			fmt.Errorf("failed to delete chat %d: %w", id, repoError),
 			func(mc *minimock.Controller) chat.Repository {
 				mock := mocks.NewRepositoryMock(mc)
+				mock.DeleteMock.Expect(ctx, id).Return(repoError)
 
 				return mock
 			},
 			func(mc *minimock.Controller) chat.AuthRepository {
 				mock := mocks.NewAuthRepositoryMock(mc)
-				mock.GetUserMock.Expect(ctx, usernames[0]).Return(user, nil)
 
 				return mock
 			},
 			func(mc *minimock.Controller) db.TxManager {
 				mock := mocks.NewTxManagerMock(mc)
-				mock.ReadCommittedMock.ExpectCtxParam1(ctx).Return(txManagerErr)
 
 				return mock
 			},
@@ -133,9 +103,8 @@ func TestCreate(t *testing.T) {
 			txManagerMock := tt.txManagerMockBehavior(mc)
 			service := chat.NewService(authRepositoryMock, repositoryMock, txManagerMock)
 
-			response, err := service.Create(tt.args.ctx, tt.args.usernames)
+			err := service.Delete(tt.args.ctx, tt.args.id)
 
-			require.Equal(t, tt.want, response)
 			if tt.err != nil {
 				require.EqualError(t, err, tt.err.Error())
 			}
