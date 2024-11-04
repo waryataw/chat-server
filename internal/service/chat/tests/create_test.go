@@ -32,8 +32,10 @@ func TestCreate(t *testing.T) {
 		user      = &models.User{ID: gofakeit.Int64()}
 		usernames = []string{gofakeit.Username()}
 
-		authRepoErr  = fmt.Errorf("failed get user from auth service")
-		txManagerErr = fmt.Errorf("tx commit failed")
+		userFromCacheErr       = fmt.Errorf("failed get user from cache")
+		userFromAuthServiceErr = fmt.Errorf("failed get user from auth service")
+		userToCacheErr         = fmt.Errorf("failed to create user in cache")
+		txManagerErr           = fmt.Errorf("tx commit failed")
 	)
 
 	tests := []struct {
@@ -78,13 +80,13 @@ func TestCreate(t *testing.T) {
 			},
 		},
 		{
-			"auth cache repo error",
+			"user from cache error case",
 			args{
 				ctx:       ctx,
 				usernames: usernames,
 			},
 			0,
-			fmt.Errorf("failed to get user from auth service: %w", authRepoErr),
+			fmt.Errorf("failed to get user from auth cache: %w", userFromCacheErr),
 			func(mc *minimock.Controller) chat.Repository {
 				mock := mocks.NewRepositoryMock(mc)
 
@@ -92,13 +94,75 @@ func TestCreate(t *testing.T) {
 			},
 			func(mc *minimock.Controller) chat.AuthRepository {
 				mock := mocks.NewAuthRepositoryMock(mc)
-				mock.GetUserMock.Expect(ctx, usernames[0]).Return(nil, authRepoErr)
+
+				return mock
+			},
+			func(mc *minimock.Controller) chat.AuthCacheRepository {
+				mock := mocks.NewAuthCacheRepositoryMock(mc)
+				mock.GetUserMock.Expect(ctx, usernames[0]).Return(nil, userFromCacheErr)
+
+				return mock
+			},
+			func(mc *minimock.Controller) db.TxManager {
+				mock := mocks.NewTxManagerMock(mc)
+
+				return mock
+			},
+		},
+		{
+			"user from auth error case",
+			args{
+				ctx:       ctx,
+				usernames: usernames,
+			},
+			0,
+			fmt.Errorf("failed to get user from auth service: %w", userFromAuthServiceErr),
+			func(mc *minimock.Controller) chat.Repository {
+				mock := mocks.NewRepositoryMock(mc)
+
+				return mock
+			},
+			func(mc *minimock.Controller) chat.AuthRepository {
+				mock := mocks.NewAuthRepositoryMock(mc)
+				mock.GetUserMock.Expect(ctx, usernames[0]).Return(nil, userFromAuthServiceErr)
 
 				return mock
 			},
 			func(mc *minimock.Controller) chat.AuthCacheRepository {
 				mock := mocks.NewAuthCacheRepositoryMock(mc)
 				mock.GetUserMock.Expect(ctx, usernames[0]).Return(nil, nil)
+
+				return mock
+			},
+			func(mc *minimock.Controller) db.TxManager {
+				mock := mocks.NewTxManagerMock(mc)
+
+				return mock
+			},
+		},
+		{
+			"user to cache error case",
+			args{
+				ctx:       ctx,
+				usernames: usernames,
+			},
+			0,
+			fmt.Errorf("failed to create user in cache: %w", userToCacheErr),
+			func(mc *minimock.Controller) chat.Repository {
+				mock := mocks.NewRepositoryMock(mc)
+
+				return mock
+			},
+			func(mc *minimock.Controller) chat.AuthRepository {
+				mock := mocks.NewAuthRepositoryMock(mc)
+				mock.GetUserMock.Expect(ctx, usernames[0]).Return(user, nil)
+
+				return mock
+			},
+			func(mc *minimock.Controller) chat.AuthCacheRepository {
+				mock := mocks.NewAuthCacheRepositoryMock(mc)
+				mock.GetUserMock.Expect(ctx, usernames[0]).Return(nil, nil)
+				mock.CreateUserMock.Expect(ctx, user).Return(userToCacheErr)
 
 				return mock
 			},
