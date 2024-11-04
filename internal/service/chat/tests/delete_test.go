@@ -16,6 +16,7 @@ import (
 func TestDelete(t *testing.T) {
 	type repositoryMockBehavior func(mc *minimock.Controller) chat.Repository
 	type authRepositoryMockBehavior func(mc *minimock.Controller) chat.AuthRepository
+	type authCacheRepositoryMockBehavior func(mc *minimock.Controller) chat.AuthCacheRepository
 	type txManagerMockBehavior func(mc *minimock.Controller) db.TxManager
 
 	type args struct {
@@ -33,13 +34,14 @@ func TestDelete(t *testing.T) {
 	)
 
 	tests := []struct {
-		name                       string
-		args                       args
-		want                       int64
-		err                        error
-		repositoryMockBehavior     repositoryMockBehavior
-		authRepositoryMockBehavior authRepositoryMockBehavior
-		txManagerMockBehavior      txManagerMockBehavior
+		name                            string
+		args                            args
+		want                            int64
+		err                             error
+		repositoryMockBehavior          repositoryMockBehavior
+		authRepositoryMockBehavior      authRepositoryMockBehavior
+		authCacheRepositoryMockBehavior authCacheRepositoryMockBehavior
+		txManagerMockBehavior           txManagerMockBehavior
 	}{
 		{
 			"success case",
@@ -57,6 +59,11 @@ func TestDelete(t *testing.T) {
 			},
 			func(mc *minimock.Controller) chat.AuthRepository {
 				mock := mocks.NewAuthRepositoryMock(mc)
+
+				return mock
+			},
+			func(mc *minimock.Controller) chat.AuthCacheRepository {
+				mock := mocks.NewAuthCacheRepositoryMock(mc)
 
 				return mock
 			},
@@ -84,6 +91,10 @@ func TestDelete(t *testing.T) {
 				mock := mocks.NewAuthRepositoryMock(mc)
 
 				return mock
+			}, func(mc *minimock.Controller) chat.AuthCacheRepository {
+				mock := mocks.NewAuthCacheRepositoryMock(mc)
+
+				return mock
 			},
 			func(mc *minimock.Controller) db.TxManager {
 				mock := mocks.NewTxManagerMock(mc)
@@ -100,8 +111,13 @@ func TestDelete(t *testing.T) {
 
 			repositoryMock := tt.repositoryMockBehavior(mc)
 			authRepositoryMock := tt.authRepositoryMockBehavior(mc)
+			authCacheRepositoryMock := tt.authCacheRepositoryMockBehavior(mc)
 			txManagerMock := tt.txManagerMockBehavior(mc)
-			service := chat.NewService(authRepositoryMock, repositoryMock, txManagerMock)
+			service := chat.NewService(
+				authRepositoryMock, authCacheRepositoryMock,
+				repositoryMock,
+				txManagerMock,
+			)
 
 			err := service.Delete(tt.args.ctx, tt.args.id)
 

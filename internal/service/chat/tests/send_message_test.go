@@ -17,6 +17,7 @@ import (
 func TestSendMessage(t *testing.T) {
 	type repositoryMockBehavior func(mc *minimock.Controller) chat.Repository
 	type authRepositoryMockBehavior func(mc *minimock.Controller) chat.AuthRepository
+	type authCacheRepositoryMockBehavior func(mc *minimock.Controller) chat.AuthCacheRepository
 	type txManagerMockBehavior func(mc *minimock.Controller) db.TxManager
 
 	type args struct {
@@ -49,13 +50,14 @@ func TestSendMessage(t *testing.T) {
 	)
 
 	tests := []struct {
-		name                       string
-		args                       args
-		want                       int64
-		err                        error
-		repositoryMockBehavior     repositoryMockBehavior
-		authRepositoryMockBehavior authRepositoryMockBehavior
-		txManagerMockBehavior      txManagerMockBehavior
+		name                            string
+		args                            args
+		want                            int64
+		err                             error
+		repositoryMockBehavior          repositoryMockBehavior
+		authRepositoryMockBehavior      authRepositoryMockBehavior
+		authCacheRepositoryMockBehavior authCacheRepositoryMockBehavior
+		txManagerMockBehavior           txManagerMockBehavior
 	}{
 		{
 			"success case",
@@ -80,6 +82,11 @@ func TestSendMessage(t *testing.T) {
 			func(mc *minimock.Controller) chat.AuthRepository {
 				mock := mocks.NewAuthRepositoryMock(mc)
 				mock.GetUserMock.Expect(ctx, username).Return(user, nil)
+
+				return mock
+			},
+			func(mc *minimock.Controller) chat.AuthCacheRepository {
+				mock := mocks.NewAuthCacheRepositoryMock(mc)
 
 				return mock
 			},
@@ -110,6 +117,11 @@ func TestSendMessage(t *testing.T) {
 
 				return mock
 			},
+			func(mc *minimock.Controller) chat.AuthCacheRepository {
+				mock := mocks.NewAuthCacheRepositoryMock(mc)
+
+				return mock
+			},
 			func(mc *minimock.Controller) db.TxManager {
 				mock := mocks.NewTxManagerMock(mc)
 
@@ -135,6 +147,11 @@ func TestSendMessage(t *testing.T) {
 			func(mc *minimock.Controller) chat.AuthRepository {
 				mock := mocks.NewAuthRepositoryMock(mc)
 				mock.GetUserMock.Expect(ctx, username).Return(user, nil)
+
+				return mock
+			},
+			func(mc *minimock.Controller) chat.AuthCacheRepository {
+				mock := mocks.NewAuthCacheRepositoryMock(mc)
 
 				return mock
 			},
@@ -170,6 +187,11 @@ func TestSendMessage(t *testing.T) {
 
 				return mock
 			},
+			func(mc *minimock.Controller) chat.AuthCacheRepository {
+				mock := mocks.NewAuthCacheRepositoryMock(mc)
+
+				return mock
+			},
 			func(mc *minimock.Controller) db.TxManager {
 				mock := mocks.NewTxManagerMock(mc)
 
@@ -185,8 +207,14 @@ func TestSendMessage(t *testing.T) {
 
 			repositoryMock := tt.repositoryMockBehavior(mc)
 			authRepositoryMock := tt.authRepositoryMockBehavior(mc)
+			authCacheRepositoryMock := tt.authCacheRepositoryMockBehavior(mc)
 			txManagerMock := tt.txManagerMockBehavior(mc)
-			service := chat.NewService(authRepositoryMock, repositoryMock, txManagerMock)
+			service := chat.NewService(
+				authRepositoryMock,
+				authCacheRepositoryMock,
+				repositoryMock,
+				txManagerMock,
+			)
 
 			err := service.SendMessage(tt.args.ctx, tt.args.username, tt.args.message.Text)
 

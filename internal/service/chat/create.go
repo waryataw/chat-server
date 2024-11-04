@@ -10,9 +10,21 @@ import (
 func (s chatService) Create(ctx context.Context, usernames []string) (int64, error) {
 	users := make([]*models.User, len(usernames))
 	for index, username := range usernames {
-		user, err := s.authRepository.GetUser(ctx, username)
+		user, err := s.AuthCacheRepository.GetUser(ctx, username)
 		if err != nil {
-			return 0, fmt.Errorf("failed get user from auth service: %w", err)
+			return 0, fmt.Errorf("failed to get user from auth cache: %w", err)
+		}
+
+		if user == nil {
+			user, err = s.authRepository.GetUser(ctx, username)
+			if err != nil {
+				return 0, fmt.Errorf("failed to get user from auth service: %w", err)
+			}
+
+			err = s.AuthCacheRepository.CreateUser(ctx, user)
+			if err != nil {
+				return 0, fmt.Errorf("failed to create user in cache: %w", err)
+			}
 		}
 
 		users[index] = user

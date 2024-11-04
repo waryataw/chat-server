@@ -18,5 +18,5 @@ func (repo repo) GetUser(ctx context.Context, name string) (*models.User, error)
 		return nil, fmt.Errorf("failed get user from auth service: %w", err)
 	}
 
-	return &models.User{ID: user.GetId()}, nil
+	return &models.User{ID: user.GetId(), Name: name}, nil
 }
