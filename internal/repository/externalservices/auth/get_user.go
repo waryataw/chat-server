@@ -9,7 +9,7 @@ import (
 )
 
 func (repo repo) GetUser(ctx context.Context, name string) (*models.User, error) {
-	user, err := repo.client.GetUser(ctx, &authv1.GetUserRequest{
+	user, err := repo.client.AuthServiceClient.GetUser(ctx, &authv1.GetUserRequest{
 		Query: &authv1.GetUserRequest_Name{
 			Name: name,
 		},

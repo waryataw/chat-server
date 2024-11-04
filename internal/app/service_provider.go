@@ -4,7 +4,8 @@ import (
 	"context"
 	"log"
 
-	"github.com/waryataw/auth/pkg/authv1"
+	"github.com/waryataw/platform_common/pkg/authclient"
+
 	"github.com/waryataw/chat-server/internal/api/chat"
 	"github.com/waryataw/chat-server/internal/config"
 	chatRepository "github.com/waryataw/chat-server/internal/repository/chat"
@@ -14,8 +15,6 @@ import (
 	"github.com/waryataw/platform_common/pkg/db"
 	"github.com/waryataw/platform_common/pkg/db/pg"
 	"github.com/waryataw/platform_common/pkg/db/transaction"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 type serviceProvider struct {
@@ -26,7 +25,7 @@ type serviceProvider struct {
 	txManager      db.TxManager
 	chatRepository chatService.Repository
 
-	authClient     authv1.AuthServiceClient
+	authClient     *authclient.AuthClient
 	authRepository chatService.AuthRepository
 
 	chatService chat.Service
@@ -83,23 +82,20 @@ func (s *serviceProvider) DBClient(ctx context.Context) db.Client {
 	return s.dbClient
 }
 
-func (s *serviceProvider) AuthClient(_ context.Context) authv1.AuthServiceClient {
+func (s *serviceProvider) AuthClient(_ context.Context) *authclient.AuthClient {
 	if s.authClient == nil {
 		grpcClientConfig, err := config.NewGRPCClientConfig()
 		if err != nil {
 			log.Fatalf("failed to get grpc client config: %v", err)
 		}
 
-		conn, err := grpc.NewClient(
-			grpcClientConfig.Address(),
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
-		)
+		authClient, err := authclient.New(grpcClientConfig.Address())
 		if err != nil {
-			log.Fatalf("failed to connect to Auth server: %v", err)
+			log.Fatalf("failed to create auth client: %v", err)
 		}
 
-		s.authClient = authv1.NewAuthServiceClient(conn)
-		closer.Add(conn.Close)
+		s.authClient = authClient
+		closer.Add(s.authClient.Conn.Close)
 	}
 
 	return s.authClient
