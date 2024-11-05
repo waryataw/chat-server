@@ -107,7 +107,7 @@ func TestSendMessage(t *testing.T) {
 				modelChat: modelChat,
 			},
 			0,
-			fmt.Errorf("failed to get user from auth cache: %w", userFromCacheErr),
+			fmt.Errorf("failed get or create user: failed to get user from auth cache: %w", userFromCacheErr),
 			func(mc *minimock.Controller) chat.Repository {
 				mock := mocks.NewRepositoryMock(mc)
 
@@ -139,7 +139,10 @@ func TestSendMessage(t *testing.T) {
 				modelChat: modelChat,
 			},
 			0,
-			fmt.Errorf("failed to get user from auth service: %w", userFromAuthServiceErr),
+			fmt.Errorf(
+				"failed get or create user: failed to get user from auth service: %w",
+				userFromAuthServiceErr,
+			),
 			func(mc *minimock.Controller) chat.Repository {
 				mock := mocks.NewRepositoryMock(mc)
 
@@ -153,7 +156,7 @@ func TestSendMessage(t *testing.T) {
 			},
 			func(mc *minimock.Controller) chat.AuthCacheRepository {
 				mock := mocks.NewAuthCacheRepositoryMock(mc)
-				mock.GetUserMock.Expect(ctx, username).Return(nil, nil)
+				mock.GetUserMock.Expect(ctx, username).Return(nil, models.ErrUserNotFound)
 
 				return mock
 			},
@@ -205,7 +208,7 @@ func TestSendMessage(t *testing.T) {
 				modelChat: modelChat,
 			},
 			0,
-			fmt.Errorf("failed to create user in cache: %w", userToCacheErr),
+			fmt.Errorf("failed get or create user: failed to create user in cache: %w", userToCacheErr),
 			func(mc *minimock.Controller) chat.Repository {
 				mock := mocks.NewRepositoryMock(mc)
 
@@ -219,7 +222,7 @@ func TestSendMessage(t *testing.T) {
 			},
 			func(mc *minimock.Controller) chat.AuthCacheRepository {
 				mock := mocks.NewAuthCacheRepositoryMock(mc)
-				mock.GetUserMock.Expect(ctx, username).Return(nil, nil)
+				mock.GetUserMock.Expect(ctx, username).Return(nil, models.ErrUserNotFound)
 				mock.CreateUserMock.Expect(ctx, user).Return(userToCacheErr)
 
 				return mock

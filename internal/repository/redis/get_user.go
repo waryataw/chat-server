@@ -14,10 +14,8 @@ func (r repo) GetUser(ctx context.Context, name string) (*models.User, error) {
 		return nil, fmt.Errorf("failed to fetch user: %w", err)
 	}
 
-	// Вот тут вопрос, ошибку отдавать если не найдено или nil, nil. Мы же понимаем что отсутствие пользователя в кеше
-	// это не ошибка, а он просто еще туда не записался. Пока остановился на таком варианте.
 	if len(values) == 0 {
-		return nil, nil
+		return nil, models.ErrUserNotFound
 	}
 
 	var user models.User
