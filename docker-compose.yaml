@@ -1,5 +1,6 @@
 volumes:
   chat_service_postgres_volume:
+  redis-data:
 
 services:
   chat-service-pg:
@@ -12,3 +13,11 @@ services:
       - "${PG_PORT}:5432"
     volumes:
       - chat_service_postgres_volume:/var/lib/postgresql/data
+
+  redis:
+    image: redis:8.0-M02-alpine3.20
+    container_name: redis-container
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data

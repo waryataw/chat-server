@@ -8,9 +8,9 @@ import (
 )
 
 func (s chatService) SendMessage(ctx context.Context, from string, text string) error {
-	user, err := s.authRepository.GetUser(ctx, from)
+	user, err := s.getUser(ctx, from)
 	if err != nil {
-		return fmt.Errorf("failed to get user: %w", err)
+		return fmt.Errorf("failed get or create user: %w", err)
 	}
 
 	chat, err := s.repository.Get(ctx, user)

@@ -4,30 +4,39 @@ import (
 	"context"
 	"log"
 
-	"github.com/waryataw/auth/pkg/authv1"
-	"github.com/waryataw/auth/pkg/client/db"
-	"github.com/waryataw/auth/pkg/client/db/pg"
-	"github.com/waryataw/auth/pkg/client/db/transaction"
-	"github.com/waryataw/auth/pkg/closer"
+	redigo "github.com/gomodule/redigo/redis"
 	"github.com/waryataw/chat-server/internal/api/chat"
+	"github.com/waryataw/chat-server/internal/client/cache"
+	"github.com/waryataw/chat-server/internal/client/cache/redis"
 	"github.com/waryataw/chat-server/internal/config"
+	"github.com/waryataw/chat-server/internal/config/env"
 	chatRepository "github.com/waryataw/chat-server/internal/repository/chat"
 	authRepository "github.com/waryataw/chat-server/internal/repository/externalservices/auth"
+	redisRepo "github.com/waryataw/chat-server/internal/repository/redis"
 	chatService "github.com/waryataw/chat-server/internal/service/chat"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"github.com/waryataw/platform_common/pkg/authclient"
+	"github.com/waryataw/platform_common/pkg/closer"
+	"github.com/waryataw/platform_common/pkg/db"
+	"github.com/waryataw/platform_common/pkg/db/pg"
+	"github.com/waryataw/platform_common/pkg/db/transaction"
 )
 
 type serviceProvider struct {
-	pgConfig   config.PGConfig
-	grpcConfig config.GRPCConfig
+	pgConfig    env.PGConfig
+	grpcConfig  env.GRPCConfig
+	redisConfig config.RedisConfig
 
-	dbClient       db.Client
-	txManager      db.TxManager
+	dbClient  db.Client
+	txManager db.TxManager
+
+	redisPool   *redigo.Pool
+	redisClient cache.RedisClient
+
 	chatRepository chatService.Repository
 
-	authClient     authv1.AuthServiceClient
-	authRepository chatService.AuthRepository
+	authClient          *authclient.AuthClient
+	authRepository      chatService.AuthRepository
+	authCacheRepository chatService.AuthCacheRepository
 
 	chatService chat.Service
 
@@ -38,9 +47,9 @@ func newServiceProvider() *serviceProvider {
 	return &serviceProvider{}
 }
 
-func (s *serviceProvider) PGConfig() config.PGConfig {
+func (s *serviceProvider) PGConfig() env.PGConfig {
 	if s.pgConfig == nil {
-		cfg, err := config.NewPGConfig()
+		cfg, err := env.NewPGConfig()
 		if err != nil {
 			log.Fatalf("failed to get pg config: %s", err.Error())
 		}
@@ -53,7 +62,7 @@ func (s *serviceProvider) PGConfig() config.PGConfig {
 
 func (s *serviceProvider) GRPCConfig() config.GRPCConfig {
 	if s.grpcConfig == nil {
-		cfg, err := config.NewGRPCConfig()
+		cfg, err := env.NewGRPCConfig()
 		if err != nil {
 			log.Fatalf("failed to get grpc config: %s", err.Error())
 		}
@@ -83,23 +92,20 @@ func (s *serviceProvider) DBClient(ctx context.Context) db.Client {
 	return s.dbClient
 }
 
-func (s *serviceProvider) AuthClient(_ context.Context) authv1.AuthServiceClient {
+func (s *serviceProvider) AuthClient(_ context.Context) *authclient.AuthClient {
 	if s.authClient == nil {
-		grpcClientConfig, err := config.NewGRPCClientConfig()
+		grpcClientConfig, err := env.NewGRPCClientConfig()
 		if err != nil {
 			log.Fatalf("failed to get grpc client config: %v", err)
 		}
 
-		conn, err := grpc.NewClient(
-			grpcClientConfig.Address(),
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
-		)
+		authClient, err := authclient.New(grpcClientConfig.Address())
 		if err != nil {
-			log.Fatalf("failed to connect to Auth server: %v", err)
+			log.Fatalf("failed to create auth client: %v", err)
 		}
 
-		s.authClient = authv1.NewAuthServiceClient(conn)
-		closer.Add(conn.Close)
+		s.authClient = authClient
+		closer.Add(s.authClient.Conn.Close)
 	}
 
 	return s.authClient
@@ -121,6 +127,49 @@ func (s *serviceProvider) AuthRepository(ctx context.Context) chatService.AuthRe
 	return s.authRepository
 }
 
+func (s *serviceProvider) RedisConfig() config.RedisConfig {
+	if s.redisConfig == nil {
+		cfg, err := env.NewRedisConfig()
+		if err != nil {
+			log.Fatalf("failed to get redis config: %s", err.Error())
+		}
+
+		s.redisConfig = cfg
+	}
+
+	return s.redisConfig
+}
+
+func (s *serviceProvider) RedisPool() *redigo.Pool {
+	if s.redisPool == nil {
+		s.redisPool = &redigo.Pool{
+			MaxIdle:     s.RedisConfig().MaxIdle(),
+			IdleTimeout: s.RedisConfig().IdleTimeout(),
+			DialContext: func(ctx context.Context) (redigo.Conn, error) {
+				return redigo.DialContext(ctx, "tcp", s.RedisConfig().Address())
+			},
+		}
+	}
+
+	return s.redisPool
+}
+
+func (s *serviceProvider) RedisClient() cache.RedisClient {
+	if s.redisClient == nil {
+		s.redisClient = redis.NewClient(s.RedisPool(), s.RedisConfig())
+	}
+
+	return s.redisClient
+}
+
+func (s *serviceProvider) AuthCacheRepository(_ context.Context) chatService.AuthCacheRepository {
+	if s.authCacheRepository == nil {
+		s.authCacheRepository = redisRepo.NewRepository(s.RedisClient())
+	}
+
+	return s.authCacheRepository
+}
+
 func (s *serviceProvider) ChatRepository(ctx context.Context) chatService.Repository {
 	if s.chatRepository == nil {
 		s.chatRepository = chatRepository.NewRepository(s.DBClient(ctx))
@@ -133,6 +182,7 @@ func (s *serviceProvider) ChatService(ctx context.Context) chat.Service {
 	if s.chatService == nil {
 		s.chatService = chatService.NewService(
 			s.AuthRepository(ctx),
+			s.AuthCacheRepository(ctx),
 			s.ChatRepository(ctx),
 			s.TxManager(ctx),
 		)

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/waryataw/auth/pkg/client/db"
+	"github.com/waryataw/platform_common/pkg/db"
 )
 
 // Delete Метод удаления чата.

@@ -1,8 +1,8 @@
 package user
 
 import (
-	"github.com/waryataw/auth/pkg/client/db"
 	"github.com/waryataw/chat-server/internal/service/chat"
+	"github.com/waryataw/platform_common/pkg/db"
 )
 
 type repo struct {

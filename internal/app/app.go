@@ -6,9 +6,9 @@ import (
 	"log"
 	"net"
 
-	"github.com/waryataw/auth/pkg/closer"
 	"github.com/waryataw/chat-server/internal/config"
 	"github.com/waryataw/chat-server/pkg/chatserverv1"
+	"github.com/waryataw/platform_common/pkg/closer"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
