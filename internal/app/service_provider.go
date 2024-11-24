@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"github.com/waryataw/platform_common/pkg/closer"
 	"log"
 
 	redigo "github.com/gomodule/redigo/redis"
@@ -15,6 +14,7 @@ import (
 	authRepository "github.com/waryataw/chat-server/internal/repository/externalservices/auth"
 	redisRepo "github.com/waryataw/chat-server/internal/repository/redis"
 	chatService "github.com/waryataw/chat-server/internal/service/chat"
+	"github.com/waryataw/platform_common/pkg/closer"
 	"github.com/waryataw/platform_common/pkg/db"
 	"github.com/waryataw/platform_common/pkg/db/pg"
 	"github.com/waryataw/platform_common/pkg/db/transaction"
