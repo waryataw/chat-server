@@ -2,14 +2,14 @@ package auth
 
 import (
 	"github.com/waryataw/chat-server/internal/service/chat"
-	"github.com/waryataw/platform_common/pkg/authclient"
+	"github.com/waryataw/platform_common/pkg/userclient"
 )
 
 type repo struct {
-	client *authclient.AuthClient
+	client *userclient.UserClient
 }
 
 // NewRepository Конструктор репозитория пользователя.
-func NewRepository(client *authclient.AuthClient) chat.AuthRepository {
+func NewRepository(client *userclient.UserClient) chat.AuthRepository {
 	return &repo{client: client}
 }

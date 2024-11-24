@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"github.com/waryataw/platform_common/pkg/closer"
 	"log"
 
 	redigo "github.com/gomodule/redigo/redis"
@@ -14,11 +15,10 @@ import (
 	authRepository "github.com/waryataw/chat-server/internal/repository/externalservices/auth"
 	redisRepo "github.com/waryataw/chat-server/internal/repository/redis"
 	chatService "github.com/waryataw/chat-server/internal/service/chat"
-	"github.com/waryataw/platform_common/pkg/authclient"
-	"github.com/waryataw/platform_common/pkg/closer"
 	"github.com/waryataw/platform_common/pkg/db"
 	"github.com/waryataw/platform_common/pkg/db/pg"
 	"github.com/waryataw/platform_common/pkg/db/transaction"
+	"github.com/waryataw/platform_common/pkg/userclient"
 )
 
 type serviceProvider struct {
@@ -34,7 +34,7 @@ type serviceProvider struct {
 
 	chatRepository chatService.Repository
 
-	authClient          *authclient.AuthClient
+	userClient          *userclient.UserClient
 	authRepository      chatService.AuthRepository
 	authCacheRepository chatService.AuthCacheRepository
 
@@ -92,23 +92,23 @@ func (s *serviceProvider) DBClient(ctx context.Context) db.Client {
 	return s.dbClient
 }
 
-func (s *serviceProvider) AuthClient(_ context.Context) *authclient.AuthClient {
-	if s.authClient == nil {
+func (s *serviceProvider) AuthClient(_ context.Context) *userclient.UserClient {
+	if s.userClient == nil {
 		grpcClientConfig, err := env.NewGRPCClientConfig()
 		if err != nil {
 			log.Fatalf("failed to get grpc client config: %v", err)
 		}
 
-		authClient, err := authclient.New(grpcClientConfig.Address())
+		authClient, err := userclient.New(grpcClientConfig.Address())
 		if err != nil {
 			log.Fatalf("failed to create auth client: %v", err)
 		}
 
-		s.authClient = authClient
-		closer.Add(s.authClient.Conn.Close)
+		s.userClient = authClient
+		closer.Add(s.userClient.Conn.Close)
 	}
 
-	return s.authClient
+	return s.userClient
 }
 
 func (s *serviceProvider) TxManager(ctx context.Context) db.TxManager {
