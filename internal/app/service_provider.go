@@ -10,10 +10,12 @@ import (
 	"github.com/waryataw/chat-server/internal/client/cache/redis"
 	"github.com/waryataw/chat-server/internal/config"
 	"github.com/waryataw/chat-server/internal/config/env"
+	interceptors "github.com/waryataw/chat-server/internal/interceptor"
 	chatRepository "github.com/waryataw/chat-server/internal/repository/chat"
 	authRepository "github.com/waryataw/chat-server/internal/repository/externalservices/auth"
 	redisRepo "github.com/waryataw/chat-server/internal/repository/redis"
 	chatService "github.com/waryataw/chat-server/internal/service/chat"
+	"github.com/waryataw/platform_common/pkg/accessclient"
 	"github.com/waryataw/platform_common/pkg/closer"
 	"github.com/waryataw/platform_common/pkg/db"
 	"github.com/waryataw/platform_common/pkg/db/pg"
@@ -34,11 +36,15 @@ type serviceProvider struct {
 
 	chatRepository chatService.Repository
 
-	userClient          *userclient.UserClient
+	userClient   *userclient.UserClient
+	accessClient *accessclient.AccessClient
+
 	authRepository      chatService.AuthRepository
 	authCacheRepository chatService.AuthCacheRepository
 
 	chatService chat.Service
+
+	authInterceptor *interceptors.AuthInterceptor
 
 	chatController *chat.Controller
 }
@@ -109,6 +115,33 @@ func (s *serviceProvider) AuthClient(_ context.Context) *userclient.UserClient {
 	}
 
 	return s.userClient
+}
+
+func (s *serviceProvider) AccessClient(_ context.Context) *accessclient.AccessClient {
+	if s.accessClient == nil {
+		grpcClientConfig, err := env.NewGRPCClientConfig()
+		if err != nil {
+			log.Fatalf("failed to get grpc client config: %v", err)
+		}
+
+		accessClient, err := accessclient.New(grpcClientConfig.Address())
+		if err != nil {
+			log.Fatalf("failed to create auth client: %v", err)
+		}
+
+		s.accessClient = accessClient
+		closer.Add(s.accessClient.Conn.Close)
+	}
+
+	return s.accessClient
+}
+
+func (s *serviceProvider) AuthInterceptor(ctx context.Context) *interceptors.AuthInterceptor {
+	if s.authInterceptor == nil {
+		s.authInterceptor = interceptors.NewAuthInterceptor(s.AccessClient(ctx))
+	}
+
+	return s.authInterceptor
 }
 
 func (s *serviceProvider) TxManager(ctx context.Context) db.TxManager {
