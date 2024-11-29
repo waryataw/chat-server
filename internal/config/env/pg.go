@@ -30,6 +30,6 @@ func NewPGConfig() (PGConfig, error) {
 	}, nil
 }
 
-func (cfg *pgConfig) DSN() string {
-	return cfg.dsn
+func (c *pgConfig) DSN() string {
+	return c.dsn
 }
