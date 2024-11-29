@@ -78,18 +78,18 @@ func NewRedisConfig() (*redisConfig, error) {
 	}, nil
 }
 
-func (cfg *redisConfig) Address() string {
-	return net.JoinHostPort(cfg.host, cfg.port)
+func (c *redisConfig) Address() string {
+	return net.JoinHostPort(c.host, c.port)
 }
 
-func (cfg *redisConfig) ConnectionTimeout() time.Duration {
-	return cfg.connectionTimeout
+func (c *redisConfig) ConnectionTimeout() time.Duration {
+	return c.connectionTimeout
 }
 
-func (cfg *redisConfig) MaxIdle() int {
-	return cfg.maxIdle
+func (c *redisConfig) MaxIdle() int {
+	return c.maxIdle
 }
 
-func (cfg *redisConfig) IdleTimeout() time.Duration {
-	return cfg.idleTimeout
+func (c *redisConfig) IdleTimeout() time.Duration {
+	return c.idleTimeout
 }

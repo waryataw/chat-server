@@ -40,6 +40,6 @@ func NewGRPCClientConfig() (GRPCClientConfig, error) {
 	}, nil
 }
 
-func (cfg *grpcClientConfig) Address() string {
-	return net.JoinHostPort(cfg.host, cfg.port)
+func (c *grpcClientConfig) Address() string {
+	return net.JoinHostPort(c.host, c.port)
 }

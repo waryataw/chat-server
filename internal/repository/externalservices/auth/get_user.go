@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/waryataw/auth/pkg/authv1"
+	"github.com/waryataw/auth/pkg/userv1"
 	"github.com/waryataw/chat-server/internal/models"
 )
 
-func (repo repo) GetUser(ctx context.Context, name string) (*models.User, error) {
-	user, err := repo.client.AuthServiceClient.GetUser(ctx, &authv1.GetUserRequest{
-		Query: &authv1.GetUserRequest_Name{
+func (r repo) GetUser(ctx context.Context, name string) (*models.User, error) {
+	user, err := r.client.UserServiceClient.GetUser(ctx, &userv1.GetUserRequest{
+		Query: &userv1.GetUserRequest_Name{
 			Name: name,
 		},
 	})

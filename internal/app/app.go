@@ -7,6 +7,7 @@ import (
 	"net"
 
 	"github.com/waryataw/chat-server/internal/config"
+	interceptors "github.com/waryataw/chat-server/internal/interceptor"
 	"github.com/waryataw/chat-server/pkg/chatserverv1"
 	"github.com/waryataw/platform_common/pkg/closer"
 	"google.golang.org/grpc"
@@ -74,7 +75,12 @@ func (a *App) initServiceProvider(_ context.Context) error {
 }
 
 func (a *App) initGRPCServer(ctx context.Context) error {
-	a.grpcServer = grpc.NewServer(grpc.Creds(insecure.NewCredentials()))
+	a.grpcServer = grpc.NewServer(
+		grpc.Creds(insecure.NewCredentials()),
+		grpc.UnaryInterceptor(
+			interceptors.NewAuthInterceptor(a.serviceProvider.AccessClient(ctx)).UnaryInterceptor,
+		),
+	)
 
 	reflection.Register(a.grpcServer)
 
